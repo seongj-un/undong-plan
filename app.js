@@ -1,0 +1,109 @@
+'use strict';
+
+(() => {
+  const byId = id => document.getElementById(id);
+  const bodyName = id => CATALOG.bodyParts.find(part => part.id === id)?.name ?? '미정';
+  const equipmentById = id => CATALOG.equipment.find(item => item.id === id);
+  const sorted = items => [...items].sort((a, b) => a.id.localeCompare(b.id, 'en'));
+  const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  const normalize = value => value.normalize('NFKC').trim().toLocaleLowerCase('en');
+  let selectedBodyPart = 'all';
+  let dialogTrigger = null;
+  const dialog = byId('detail-dialog');
+
+  function exerciseCard(exercise) {
+    const names = exercise.equipmentIds.map(id => equipmentById(id).name);
+    return `<article class="exercise-card">
+      <div class="card-visual tone-${exercise.primaryBodyPartId}" aria-hidden="true"><span class="visual-ring"></span><span class="visual-letter">${escapeHtml(bodyName(exercise.primaryBodyPartId))}</span><span class="visual-index">${escapeHtml(names[0].replace(' 머신', ''))}</span></div>
+      <div class="card-content"><div class="tags"><span>${exercise.sourceBodyPartIds.map(bodyName).map(escapeHtml).join(' · ')}</span><span class="draft-tag">안내 초안</span></div>
+      <h3>${escapeHtml(exercise.name)}</h3><p class="card-copy">${escapeHtml(exercise.summary)}</p>
+      <p class="equipment-label">사용 기구</p><div class="equipment-links">${exercise.equipmentIds.map(id => `<button class="text-button" data-equipment="${id}">${escapeHtml(equipmentById(id).name)} <span aria-hidden="true">↗</span></button>`).join('')}</div>
+      <button class="detail-button" data-exercise="${exercise.id}" aria-label="${escapeHtml(exercise.name)} 사용법 보기">사용법 보기 <span aria-hidden="true">→</span></button></div>
+    </article>`;
+  }
+
+  function renderExercises() {
+    // 검수 전에는 원문 대상 부위로 탐색한다. 보조 부위를 추정하지 않는다.
+    const exercises = sorted(CATALOG.exercises.filter(exercise => selectedBodyPart === 'all' || exercise.sourceBodyPartIds.includes(selectedBodyPart)));
+    byId('exercise-list-title').textContent = selectedBodyPart === 'all' ? '전체 운동' : `${bodyName(selectedBodyPart)} 운동`;
+    byId('exercise-count').textContent = `${exercises.length}개의 운동`;
+    byId('exercise-list').innerHTML = exercises.length ? exercises.map(exerciseCard).join('') : '<div class="empty-state"><strong>아직 등록된 운동이 없어요.</strong><p>다른 부위를 선택해 운동과 기구를 찾아보세요.</p></div>';
+    byId('body-options').querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.bodyPart === selectedBodyPart)));
+  }
+
+  function renderEquipment() {
+    const query = normalize(byId('equipment-query').value);
+    const equipment = sorted(CATALOG.equipment.filter(item => !query || [item.name, ...item.aliases].some(name => normalize(name).includes(query))));
+    byId('equipment-count').textContent = `${equipment.length}개의 기구`;
+    byId('equipment-list').innerHTML = equipment.length ? equipment.map(item => `<article class="equipment-card"><p class="eyebrow">WEIGHT MACHINE</p><h3>${escapeHtml(item.name)}</h3><p class="card-copy">${escapeHtml(item.description)}</p><p class="alias-label">별칭 · ${item.aliases.map(escapeHtml).join(', ')}</p><p class="photo-note">사진 미제공 · 사용 권한 확인 대기</p><button class="detail-button" data-equipment="${item.id}" aria-label="${escapeHtml(item.name)} 상세 보기">기구 상세 보기 <span aria-hidden="true">→</span></button></article>`).join('') : '<div class="empty-state"><strong>검색 결과가 없어요.</strong><p>다른 기구 이름이나 별칭으로 검색해 보세요.</p><button class="text-button" data-reset-search>전체 기구 보기 →</button></div>';
+  }
+
+  function sourceList(sources) {
+    return `<ul class="source-list">${sources.map(source => `<li><a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.title)} <span aria-hidden="true">↗</span><span class="sr-only"> (새 탭)</span></a><span>확인일 ${escapeHtml(source.checkedAt)}</span></li>`).join('')}</ul>`;
+  }
+
+  function showDetail(html, trigger) {
+    if (!dialog.open) dialogTrigger = trigger;
+    byId('detail-content').innerHTML = html;
+    if (!dialog.open) dialog.showModal();
+    // 내용 간 이동 시에도 제목부터 읽고, 이전 상세의 스크롤을 초기화한다.
+    dialog.scrollTop = 0;
+    byId('detail-title').focus({ preventScroll: true });
+  }
+
+  function showExercise(id, trigger) {
+    const exercise = CATALOG.exercises.find(item => item.id === id);
+    if (!exercise) return;
+    showDetail(`<p class="detail-kicker">운동 사용 안내 · 초안</p><h2 id="detail-title" tabindex="-1">${escapeHtml(exercise.name)}</h2><p class="detail-description">${escapeHtml(exercise.summary)}</p>
+      <dl class="detail-facts"><div><dt>주 사용 부위</dt><dd>${escapeHtml(bodyName(exercise.primaryBodyPartId))} <small>분류 초안</small></dd></div><div><dt>보조 부위</dt><dd>미정 · 전문가 검수 대기</dd></div><div><dt>출처의 대상 부위</dt><dd>${exercise.sourceBodyPartIds.map(bodyName).map(escapeHtml).join(' · ')}</dd></div><div><dt>필요한 기구</dt><dd>${exercise.equipmentIds.map(equipmentId => `<button class="text-button" data-equipment="${equipmentId}">${escapeHtml(equipmentById(equipmentId).name)} ↗</button>`).join('')}</dd></div></dl>
+      <h3>기본 사용 순서</h3><ol class="instructions">${exercise.instructions.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>
+      <div class="cautions"><h3>동작 중 확인할 점</h3><ul>${exercise.cautions.map(caution => `<li>${escapeHtml(caution)}</li>`).join('')}</ul></div>
+      <h3>출처와 확인일</h3>${sourceList(exercise.sources)}<p class="review-note">한국어 안내는 위 출처의 요약입니다. 전문가 검수는 미완료이며 개인별 적합성은 확인하지 않았습니다. 실제 조절 방법은 사용하는 기구의 안내를 확인하세요.</p>`, trigger);
+  }
+
+  function showEquipment(id, trigger) {
+    const item = equipmentById(id);
+    if (!item) return;
+    const exercises = sorted(CATALOG.exercises.filter(exercise => exercise.equipmentIds.includes(id)));
+    const sources = [...new Map(exercises.flatMap(exercise => exercise.sources).map(source => [source.url, source])).values()];
+    showDetail(`<p class="detail-kicker">기구 안내</p><h2 id="detail-title" tabindex="-1">${escapeHtml(item.name)}</h2><p class="detail-description">${escapeHtml(item.description)}</p><dl class="detail-facts"><div><dt>검색할 수 있는 별칭</dt><dd>${item.aliases.map(escapeHtml).join(', ')}</dd></div><div><dt>기구 사진</dt><dd>미제공 · 사진 사용 권한 확인 대기</dd></div></dl><h3>이 기구를 사용하는 운동</h3><div class="related-exercises">${exercises.map(exercise => `<button class="related-button" data-exercise="${exercise.id}"><span>${escapeHtml(exercise.name)}<small>${exercise.sourceBodyPartIds.map(bodyName).map(escapeHtml).join(' · ')}</small></span><span aria-hidden="true">→</span></button>`).join('')}</div><h3>연결 근거</h3>${sourceList(sources)}<p class="review-note">같은 이름의 머신도 모델마다 구조와 조절 방법이 다를 수 있습니다. 사진과 전문가 검수는 준비 중입니다.</p>`, trigger);
+  }
+
+  function resetSearch() {
+    byId('equipment-query').value = '';
+    renderEquipment();
+    byId('equipment-query').focus();
+  }
+
+  byId('body-options').innerHTML = [{ id: 'all', name: '전체' }, ...CATALOG.bodyParts].map(part => `<button type="button" data-body-part="${part.id}" aria-pressed="${part.id === 'all'}">${escapeHtml(part.name)} <span aria-hidden="true">↗</span></button>`).join('');
+  byId('body-options').addEventListener('click', event => {
+    const button = event.target.closest('[data-body-part]');
+    if (!button) return;
+    selectedBodyPart = button.dataset.bodyPart;
+    renderExercises();
+  });
+  document.querySelector('.view-switch').addEventListener('click', event => {
+    const button = event.target.closest('[data-view]');
+    if (!button) return;
+    const isBody = button.dataset.view === 'body';
+    byId('body-view').hidden = !isBody;
+    byId('equipment-view').hidden = isBody;
+    document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+  });
+  document.addEventListener('click', event => {
+    const button = event.target.closest('[data-exercise], [data-equipment], [data-reset-search]');
+    if (!button) return;
+    if (button.hasAttribute('data-reset-search')) resetSearch();
+    else if (button.dataset.exercise) showExercise(button.dataset.exercise, button);
+    else showEquipment(button.dataset.equipment, button);
+  });
+  byId('equipment-query').addEventListener('input', renderEquipment);
+  byId('equipment-search').addEventListener('submit', event => { event.preventDefault(); renderEquipment(); });
+  byId('clear-search').addEventListener('click', resetSearch);
+  dialog.addEventListener('close', () => {
+    if (dialogTrigger?.isConnected) dialogTrigger.focus({ preventScroll: true });
+    dialogTrigger = null;
+  });
+  renderExercises();
+  renderEquipment();
+})();

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="운동 부위와 기구 이름으로 찾아보는 첫 운동 안내.">
+  <title>운동 첫걸음 · 부위와 기구 찾기</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="catalog.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 바로 가기</a>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="운동 첫걸음 홈"><span class="brand-mark" aria-hidden="true">↗</span> 운동 첫걸음</a>
+    <span class="header-note">처음 배우는 운동, 하나씩.</span>
+  </header>
+  <main id="main">
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow">YOUR FIRST MOVE</p>
+      <h1 id="page-title">어디부터 운동할지,<br>함께 찾아볼까요?</h1>
+      <p class="intro-copy">운동하고 싶은 부위부터, 눈앞에 있는 기구부터.<br>기구 이름과 사용법을 하나씩 알아보세요.</p>
+      <div class="intro-summary"><span>로그인 없이 바로 탐색</span><span>운동 3개 · 기구 3개</span></div>
+      <div class="intro-art" aria-hidden="true"><span class="art-orbit"></span><span class="art-line"></span><span class="art-weight"></span><span class="art-caption">START<br>SMALL.</span></div>
+    </section>
+    <nav class="view-switch" aria-label="탐색 방식">
+      <button type="button" data-view="body" aria-pressed="true" aria-controls="body-view">부위로 찾기</button>
+      <button type="button" data-view="equipment" aria-pressed="false" aria-controls="equipment-view">기구로 찾기</button>
+    </nav>
+    <section id="body-view" class="explore" aria-labelledby="body-title">
+      <aside class="body-picker">
+        <p class="eyebrow">01 / BODY PART</p>
+        <h2 id="body-title">관심 있는 부위</h2>
+        <p class="muted">부위를 고르면 연결된<br class="desktop-break"> 운동과 기구가 보여요.</p>
+        <div id="body-options" class="body-options" role="group" aria-label="운동 부위 선택"></div>
+      </aside>
+      <div class="results">
+        <div class="section-heading"><h2 id="exercise-list-title">전체 운동</h2><p id="exercise-count" class="muted" role="status" aria-live="polite"></p></div>
+        <div id="exercise-list" class="card-grid"></div>
+      </div>
+    </section>
+    <section id="equipment-view" class="equipment-view" aria-labelledby="equipment-title" hidden>
+      <div class="section-heading"><div><p class="eyebrow">02 / EQUIPMENT</p><h2 id="equipment-title">어떤 기구를 찾고 있나요?</h2></div></div>
+      <form id="equipment-search" role="search">
+        <label for="equipment-query">기구 이름 또는 별칭</label>
+        <div class="search-field"><span aria-hidden="true">⌕</span><input id="equipment-query" type="search" placeholder="예: 체스트 프레스, lat pulldown" maxlength="50" autocomplete="off" aria-describedby="search-help"><button type="button" id="clear-search">초기화</button></div>
+        <p id="search-help" class="muted">한글·영문 이름과 별칭으로 검색할 수 있어요.</p>
+      </form>
+      <div class="section-heading equipment-count"><h3>기구 목록</h3><p id="equipment-count" class="muted" role="status" aria-live="polite"></p></div>
+      <div id="equipment-list" class="card-grid"></div>
+    </section>
+    <section class="content-note" aria-label="콘텐츠 안내"><span class="note-symbol" aria-hidden="true">i</span><div><strong>먼저 알아두세요</strong><p>이 화면은 출처를 확인한 안내 초안입니다. 전문가 검수와 개인별 적합성 확인은 아직 진행하지 않았어요. 기구별 조절 방법은 현장의 기구 안내를 확인하세요.</p></div></section>
+    <noscript><p class="empty-state">부위 탐색과 기구 검색을 사용하려면 브라우저에서 JavaScript를 켜 주세요.</p></noscript>
+  </main>
+  <footer><span>운동 첫걸음</span><span>작은 시작을 위한 운동 안내</span></footer>
+  <dialog id="detail-dialog" aria-labelledby="detail-title">
+    <div class="dialog-top"><span class="eyebrow">MOVEMENT GUIDE</span><form method="dialog"><button class="close-button" aria-label="상세 닫기">닫기 <span aria-hidden="true">×</span></button></form></div>
+    <div id="detail-content"></div>
+  </dialog>
+</body>
+</html>
