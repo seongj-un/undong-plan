@@ -17,8 +17,9 @@
 - 어깨·팔·복부 운동은 아직 등록하지 않았습니다. 레그 프레스는 하체와 엉덩이에서 확인할 수 있습니다.
 - 검색은 최대 50자이며 영문 대소문자를 구분하지 않습니다. 빈 입력은 전체 기구를 표시합니다.
 - 화면 전환과 상세 닫기 후에는 현재 입력을 유지합니다. 새로고침하면 전체 목록으로 시작합니다.
-- <img width="319" height="2167" alt="image" src="https://github.com/user-attachments/assets/098041ca-de27-46d7-9129-c31d8053e044" />
-
+<img width="1512" height="982" alt="스크린샷 2026-09-30 오후 5 11 08" src="https://github.com/user-attachments/assets/76bf84a2-39d8-4d6e-8c0f-a925a08f83f9" />
+<img width="1512" height="982" alt="스크린샷 2026-09-30 오후 5 11 19" src="https://github.com/user-attachments/assets/eba74166-4153-4b5a-b5aa-cc231756abb2" />
+<img width="1512" height="982" alt="스크린샷 2026-09-30 오후 5 11 48" src="https://github.com/user-attachments/assets/8095f048-25b6-49a1-a2c1-d448d05b6d8d" />
 
 ## 실행 방법
 
