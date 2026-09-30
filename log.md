@@ -53,6 +53,8 @@
 - `.gitignore`: macOS 보조 파일과 환경 비밀 파일이 공개 저장소에 들어가지 않도록 제외.
 - 추가 요청: ‘로컬로 띄워줘’. 기본 `open index.html`은 파일 연결 앱 오류로 실패했고, Chrome을 명시한 `open -a 'Google Chrome' /Users/seongjun/Desktop/project/undong-plan/index.html`은 성공. 이는 실행 명령 성공이며 화면·콘솔 자동 확인 통과를 뜻하지 않음.
 - 저장소 생성: [seongj-un/undong-plan](https://github.com/seongj-un/undong-plan), 공개. 로컬 Git을 `main`으로 초기화하고 `origin`을 연결. 사용자 요청에 따라 구현·문서 파일을 커밋·푸시하며 원격 커밋과 로컬 커밋 일치 여부를 확인한다.
+- 푸시 확인: 최초 구현 커밋 `62096d2130efd6fb1bd55aa8bc74a9c73db0e343`의 `main` 푸시 성공. `git ls-remote origin refs/heads/main`과 로컬 `HEAD`가 일치함을 확인. 이 성공 기록도 후속 문서 커밋으로 업로드한다.
+- 동시에 생성된 미추적 `loop-log.md`는 일정 추가·완료·삭제 체크리스트로 현재 운동 프로젝트 규칙·기능과 관련이 없어 이번 구현 커밋에 포함하지 않고 보존.
 
 ## 2026년 9월 30일 실행과 확인 규칙 정리
 
