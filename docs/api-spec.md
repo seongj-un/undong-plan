@@ -1,12 +1,16 @@
 # 오늘의 운동 부위와 기구 추천 API 명세서
 
-부위·기구·운동 조회와 오늘의 추천을 위한 API 계약 초안이다. API는 아직 구현되지 않았으며 서버 주소, 프레임워크, 데이터베이스와 인증 기술은 미정이다.
+부위·기구·운동 조회와 오늘의 추천을 위한 API 계약 초안이다. 2026-09-30에 이 계약의 API 6개를 `server/server.js`로 구현했다. 구현 기술(Node.js 표준 라이브러리)은 기본안 적용·사용자 확인 대기이며, 계약 자체는 특정 구현 기술 선택이 아니다. 배포 서버 주소, 프레임워크, 데이터베이스와 인증 기술은 미정이다.
 
 작성일: 2026-09-30 · 문서 상태: 초안 v0.2 · 기능 기준: [기획서](planning.md)
 
 ## 현재 화면과 API의 관계
 
-F01·F02·F03의 [정적 화면](../index.html)은 내장된 `catalog.js` 데이터로 동작한다. 서버 API를 호출하지 않으며 아래 경로는 모두 미구현이다. 향후 서버 도입 전 기술 선택과 콘텐츠 검수를 진행한다. F04~F06 추천 규칙과 계약은 변경하지 않는다.
+F01~F06의 [정적 화면](../index.html)은 내장된 `catalog.js` 데이터와 `recommend.js`로 동작하며 서버 API를 호출하지 않는다. 아래 경로는 [`server/server.js`](../server/server.js)에 구현했다. 서버는 `catalog.js`와 `recommend.js`를 `node:vm`으로 읽어 화면과 같은 추천 계산(`RECOMMENDER.recommendToday`)을 재사용하며, 추천 규칙을 따로 구현하지 않는다. F04~F06 추천 규칙과 계약은 변경하지 않는다.
+
+현재 서버는 CORS 헤더를 보내지 않는다. 다른 출처에서 연 화면(`file:`로 연 `index.html` 포함)은 브라우저 정책상 응답을 읽을 수 없다. [MDN CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS) 화면과 API의 연결 방식(CORS 허용 또는 같은 출처 제공)은 미정이다.
+
+로컬 화면의 추천은 검수 전 초안을 미리보기 후보로 쓰고 `catalogVersion`을 `local-draft-2026-09-30`으로 표시한다. 서버는 검수 완료 운동만 후보로 쓴다. 이 로컬 미리보기 예외는 사용자 확인 대기이며 공개 API 계약의 변경이 아니다.
 
 로컬 안내 초안은 아래 공개 API 모델과 구분한다. `review: null`, `secondaryBodyPartIds: null`은 미검수·미정 상태를 표시하기 위한 로컬 전용 표현이다. `sourceBodyPartIds: string[]`도 원문 대상 부위로 탐색하기 위한 로컬 전용 필드다. 주 사용 부위는 화면 분류 초안이다. 이러한 데이터를 검수 완료 API 응답으로 반환하지 않는다.
 
@@ -258,6 +262,55 @@ GET에는 요청 본문이 없다. 정의하지 않은 쿼리 매개변수나 �
 }
 ```
 
+## 구현 참고·명세 외 추가 사항
+
+이 절은 2026-09-30 `server/server.js` 구현에서 정한 세부 동작이다. 위 계약을 바꾸지 않으며, 계약이 정하지 않은 부분을 구현이 어떻게 처리하는지 기록한다. 서버 기술과 아래 세부값은 사용자 확인 대기다.
+
+### 실행과 테스트
+
+| 항목 | 현재 구현 |
+| --- | --- |
+| 파일 | `server/server.js`, 테스트 `server/api.test.js` |
+| 기술 | Node.js 표준 라이브러리만 사용, `package.json`·패키지 설치 없음, 확인한 버전 v24.14.0 |
+| 실행 | 프로젝트 루트에서 `node server/server.js`, 주소 `http://127.0.0.1:8787/api/v1`, `PORT` 환경 변수로 포트 변경 |
+| 테스트 | `node --test "server/*.test.js"`, 47개. Node.js 24에서 `node --test server/`는 폴더를 테스트 파일로 찾지 못해 실패한다. [Node.js test runner](https://nodejs.org/api/test.html#running-tests-from-the-command-line) |
+| 카탈로그 읽기 | 첫 로드 후 메모리에 보관. `catalog.js`·`recommend.js` 수정 후 서버 재시작 필요. 로드에 실패하면 503을 반환하고 다음 요청에서 다시 읽음 |
+
+### 공개 카탈로그 변환
+
+- 공개 운동 조건: `review.reviewedAt`이 `YYYY-MM-DD`, `review.reviewerLabel`이 비어 있지 않음, `difficulty: "beginner"`, `secondaryBodyPartIds`가 배열, `instructions` 1개 이상, `cautions` 배열, `sources` 1개 이상(각 `title`·`url`·`checkedAt`).
+- 현재 `catalog.js`에는 조건을 만족하는 운동이 없다. 그래서 `GET /api/v1/exercises`는 `data: []`, 운동 상세는 404 `EXERCISE_NOT_FOUND`, `confirmed` 추천은 `no_candidates`다. 부위 7개와 기구 3개는 조회된다.
+- 로컬 전용 필드(`sourceBodyPartIds`, `summary`)는 응답에서 제거한다.
+- `catalog.js`에 부위 설명이 없어 BodyPart의 `description`은 `"<부위 이름> 부위 운동을 찾아보세요."`로 만든다.
+- 목록은 공통 목록 규칙대로 식별자 오름차순이다. 부위 목록은 `arms`, `back`, `chest`… 순서라 화면의 표시 순서(가슴·등·하체…)와 다르다.
+- 추천의 `catalogVersion`은 `server-` 뒤에 공개 카탈로그 JSON의 SHA-256 앞 12자리를 붙인다. 현재 값은 `server-b74a3d9f9fbc`다.
+- 추천은 `recommend.js`를 `includeUnreviewedDraft: false`로 호출한다. 추천 입력 검증 순서는 `VALIDATION_ERROR` → `UNKNOWN_CATALOG_ID` → `CONFLICTING_BODY_PARTS`다.
+
+### 명세 오류 표에 없는 상태·오류
+
+| HTTP 상태 | 오류 코드 | 조건 |
+| --- | --- | --- |
+| 404 | `NOT_FOUND` | 정의되지 않은 경로 |
+| 405 | `METHOD_NOT_ALLOWED` | 경로에 맞지 않는 메서드. `Allow` 헤더 포함, GET 경로는 HEAD도 허용 |
+| 400 | `BAD_REQUEST` | 해석할 수 없는 HTTP 요청 |
+| 408 | `REQUEST_TIMEOUT` | 요청 시간 초과. 자동 테스트 없음 |
+| 431 | `HEADERS_TOO_LARGE` | 요청 헤더가 너무 큼. 자동 테스트 없음 |
+| 503 | `CATALOG_UNAVAILABLE` | 기존 코드. 공개 운동이 카탈로그에 없는 부위·기구를 참조할 때도 사용 |
+
+### 계약 해석과 세부 적용
+
+- 요청 본문은 16KB 이하. 초과하면 오류 표에 413이 없어 400 `VALIDATION_ERROR`(`"요청 본문은 16KB 이하여야 합니다."`, `details: []`)로 응답하고 `Connection: close`를 보낸다.
+- 빈 필터 값(`bodyPartId=`, `equipmentId=`)은 400 `VALIDATION_ERROR`다. 빈 `q=`도 1~50자 조건에 따라 400이다.
+- POST의 `Content-Type`은 `application/json`이며 `charset`은 없거나 `utf-8`이어야 한다. 그 밖에는 415 `UNSUPPORTED_MEDIA_TYPE`이다.
+- UTF-8로 해석할 수 없는 본문은 400 `INVALID_JSON`이다.
+- 경로 처리 응답에는 `Content-Type: application/json; charset=utf-8`, `X-Content-Type-Options: nosniff`, `Cache-Control: no-store`를 보낸다. 해석할 수 없는 HTTP 요청에 대한 400·408·431 응답은 JSON 본문과 `Content-Type`, `Connection: close`만 보낸다.
+- 로그에는 메서드·경로·상태·처리 시간만 남긴다. 쿼리 문자열과 요청 본문은 남기지 않는다.
+- 오류 우선순위: 경로 404 → 메서드 405 → 쿼리 400 → 415 → 본문 크기 400 → `INVALID_JSON` → 카탈로그 503 → `UNKNOWN_CATALOG_ID`·404·추천 입력 검증.
+
+### 구현하지 않은 부분
+
+CORS, 화면과의 연결, 호출 제한, 배포는 없다. Windows에서는 실행하지 않았다.
+
 ## 명세 확인 기준
 
 - 기구 미확인과 확인 후 기구 없음의 상태가 다르다.
@@ -267,6 +320,6 @@ GET에는 요청 본문이 없다. 정의하지 않은 쿼리 매개변수나 �
 - 목록 결과 없음은 200, 상세 대상 없음은 404로 구분한다.
 - 응답 예시의 JSON이 유효하고 기획서의 입력·상태·정렬 규칙과 일치한다.
 
-이 기준은 향후 구현 검증용이며 실제 API 테스트를 실행했다는 뜻이 아니다. 서버 주소·요청 크기 제한·호출 제한·배포 운영 정책은 기술 및 운영 결정 이후 확정한다.
+이 기준은 구현 검증용 기준이다. `server/api.test.js`의 자동 테스트 결과는 [작업 기록](../log.md)에 둔다. 16KB 본문 제한은 현재 구현값이며, 배포 서버 주소·호출 제한·배포 운영 정책은 기술 및 운영 결정 이후 확정한다.
 
 외부 규격 확인일: 2026-09-30. HTTP 근거: [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html).

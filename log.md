@@ -1,5 +1,45 @@
 # 운동 부위와 기구 추천 프로젝트 작업 기록
 
+## 2026년 9월 30일 오늘의 추천(F04~F06)과 서버 API 구현
+
+- 사용자 요청: ‘지금 docs 폴더에 있는데로 구현 완료 해줘’, ‘계속 진행해’, ‘전부 구현해 서브 에이전트 이용해서’.
+- 역할: Codex MCP 연결이 끊겨(connection closed) Codex를 사용할 수 없었고, 사용자가 Claude에게 구현을 지시해 Claude가 코드를 작성. 서브 에이전트 3개 사용: 서버 구현, 화면 코드 리뷰(읽기 전용), 문서 갱신. Codex의 작성·리뷰는 없음.
+- 결정 질문: 추천 후보 데이터 정책과 서버 기술 2개를 질문했으나 질문 창이 내부 오류로 실패해 사용자가 보거나 답하지 못함. 아래 A~C는 기본안으로 적용했으며 **사용자 확인 대기**. 승인된 결정으로 기록하지 않음.
+- 결정 A (기본안 적용·사용자 확인 대기): 로컬 화면 추천은 검수 전 초안(`review: null`)도 후보로 사용(`recommend.js`의 `INCLUDE_UNREVIEWED_DRAFT = true`). 카드마다 ‘검수 전 초안’, 결과 아래 미리보기이며 운동 처방이 아니라는 안내 표시. 서버는 `includeUnreviewedDraft: false`로 검수 완료 운동만 사용. 기획서 추천 규칙 4와 `AGENTS.md`의 ‘초안은 추천 후보로 쓰지 않는다’에 대한 로컬 미리보기 한정 예외이며 서버·공개 카탈로그 정책 변경이 아님. 규칙 4만 적용하면 현재 검수 완료 운동이 없어 기구를 확인해도 항상 후보 없음.
+- 결정 B (기본안 적용·사용자 확인 대기): 로컬 초안의 보조 부위가 `null`이라 제외 판단에 주 사용 부위와 `sourceBodyPartIds`를 함께 사용(보수적 적용, 엉덩이 제외 시 레그 프레스 제외). 선호 부위는 주 사용 부위에만 적용(엉덩이 선호 시 후보 없음). 보조 부위가 미정이면 추천 이유에 제외 부위가 주 사용 부위와 출처의 대상 부위에 없다는 것까지만 쓰고 보조 부위는 미정(검수 전)으로 표시.
+- 결정 C (기본안 적용·사용자 확인 대기): 서버 기술은 Node.js 표준 라이브러리. 이미 설치된 Node v24.14.0 사용, `package.json`·`npm install`·프레임워크 없음. 대안은 Python 표준 라이브러리 서버 또는 서버를 추가하지 않는 것.
+- `recommend.js` 신규: `RECOMMENDER.recommendToday(body, catalog, { includeUnreviewedDraft, catalogVersion })`가 API 명세 형태의 `{ data }` 또는 `{ error }`를 반환. 검증 순서 `VALIDATION_ERROR` → `UNKNOWN_CATALOG_ID` → `CONFLICTING_BODY_PARTS`. 기획서 규칙 1~9, 부위 순서 순회와 식별자 오름차순, 이유 코드 `AVAILABLE_EQUIPMENT` + `PREFERRED_BODY_PART`/`AUTO_BODY_PART`, `rulesVersion: draft-v0.1`, 로컬 `catalogVersion: local-draft-2026-09-30`. 기구 미확인, 확인했지만 기구 없음, 조건에 맞는 후보 없음(‘조건은 그대로’), 일부만 추천의 문구를 구분. 저장 없음. 화면과 서버가 같은 계산을 쓰도록 분리.
+- `index.html`: `recommend.js` 로드(`catalog.js` 다음, `app.js` 앞), 첫 화면 ‘오늘의 추천 받기’·‘부위·기구 둘러보기’ 버튼(기획서 ‘시작’의 두 진입 경로), ‘오늘의 추천’ 탭, 추천 입력 폼과 결과 영역, 제외 부위 도움말, 기구 선택 묶음의 `aria-describedby`.
+- `app.js`: 추천 폼 렌더링, 기구 확인 여부에 따른 기구 선택 활성화·해제, 결과 배너(상태·문구·요청/추천 개수)와 카드, 입력 오류·부위 충돌 안내, 배너로 초점 이동, 기구 상세·운동 상세·기구로 찾기 연결.
+- `styles.css`: 시작 버튼, 추천 폼·선택 칩, 결과 배너 상태별 색, 추천 카드, 좁은 화면의 1단 배치.
+- `server/server.js` 신규: API 6개. `catalog.js`·`recommend.js`를 `node:vm`으로 읽어 추천 계산을 재사용(두 번째 알고리즘 없음). 검수 완료 운동만 공개하는 공개 카탈로그 변환, 명세 외 404·405·400·408·431 처리, 16KB 본문 제한, Content-Type·UTF-8 검사, 쿼리·본문 없는 로그. 세부 사항은 `docs/api-spec.md`의 구현 참고 절에 기록.
+- `server/api.test.js` 신규: `node:test` 기반 API 테스트 47개.
+- 문서: `AGENTS.md`(현재 범위, 기술·역할, 명령, 실행 방법, 임시 미리보기 파일 5개), `README.md`(기능·사용 순서·API 서버·파일 구성·검증 결과·후속 범위), `docs/planning.md`(현재 구현 범위, 규칙 4·5 주석), `docs/api-spec.md`(화면과 API의 관계, 구현 참고·명세 외 추가 사항), `docs/project-overview.md`(현재 작업·구현, 기술 결정 상태, 결정 질문 3개, 완료 기준), `loop-log.md`(브라우저 검증과 수정 회차).
+- 추천 규칙 확인: 스크래치 스크립트(프로젝트 명령 아님)로 `recommend.js` 규칙 검사 16/16 통과.
+- API 테스트: `node --test "server/*.test.js"` 47/47 통과(메인 세션 재실행, 문서 갱신 중 재실행도 47/47). Node 24에서 `node --test server/`는 폴더를 테스트 파일로 찾지 못해 실패. 프로젝트 루트의 `node --test`는 기본 패턴으로 같은 47개를 실행. 참고: [Node.js test runner](https://nodejs.org/api/test.html#running-tests-from-the-command-line).
+- 서버 실행 확인: 임시 포트 52901에서 실행 후 종료. 부위 목록 200, `equipment?q=랫풀다운` → `eq_lat_pulldown`, 빈 `q=` → 400 `VALIDATION_ERROR`, 운동 목록 `[]`, `exercises/ex_chest_press` → 404, 기구 3개 확인 추천 → 200 `no_candidates`, 선호·제외 가슴 → 400 `CONFLICTING_BODY_PARTS`.
+- 브라우저 확인: macOS Claude 데스크톱 앱 내장 브라우저. `file:`로 열면 CSS·JS 없는 정적 스냅숏만 보여 검증 불가. 화면 파일 5개만 제공하는 임시 `127.0.0.1:52811` 미리보기 사용(`/log.md`, `/docs/planning.md`, `/.git/config`, `/server/server.js`는 404), 테스트 후 종료. 콘솔 error/warn 0개, 시나리오 11개·실제 클릭·F01/F02 회귀·반응형 통과. 세부 결과는 `loop-log.md`.
+- 수정: 브라우저에서 찾은 실패 1건(‘아직 모르겠어요’로 바꿔도 기구 체크가 남아 확인한 기구처럼 보임)을 `app.js` `syncEquipmentChoices`에서 해제하도록 고쳐 재검증 통과. 코드 리뷰 서브 에이전트는 명세 계산 오류를 찾지 못했고, 지적 3건을 반영: ① 추천 이유가 검수 전 보조 부위까지 확인한 것처럼 표현 → `recommend.js` 이유 문구와 `index.html` 제외 부위 도움말 수정 ② 초점을 받는 배너의 `role=alert/status` 중복 낭독 가능성 → 역할 제거, 초점 이동 유지(`app.js`) ③ 기구 선택 묶음에 `aria-describedby="equipment-choice-help"` 추가(`index.html`). 반영 후 브라우저 재확인, 콘솔 0개. 같은 기준 재수정 없음.
+- 한계: CORS 없음, 화면이 서버 API를 호출하지 않음(연결 방식 미정). 호출 제한 없음. 408·431은 자동 테스트 없음. Windows 미실행. Chrome `file:` 직접 실행, 실제 스크린 리더, 사람의 시각 검토는 미확인. 배포 없음. `presentation.html`은 이번 구현 전 상태로 추천을 ‘미구현’으로 표시하며 이번에 수정하지 않음.
+
+## 2026년 9월 30일 Claude Slides 소개 아티팩트와 로컬 실행
+
+- 사용자 요청: ‘아티팩트로 빨리 5페이지 이내 소개’. Claude가 비공개 Claude Slides 아티팩트 5장을 만듦. 프로젝트 파일 변경 없음.
+- 사용자 요청: ‘로컬로 띄워줘’, ‘프러젝트 빌드 하라는 뜻’. 빌드 단계가 없어 `open index.html`로 화면을 엶. 실행 명령이며 화면 검증을 뜻하지 않음.
+
+## 2026년 9월 30일 제품 소개 HTML 발표 자료 제작
+
+- 사용자 요청: 제품 소개를 위한 HTML 발표 자료 5페이지 제작.
+- 작성: `presentation.html`. 제품 소개 → 대상과 문제 → 현재 구현 → 사용 흐름 → 제품 방향의 5페이지. 현재 제품명 ‘운동 첫걸음’을 사용하고 제품 조사 결과나 성과 수치를 만들지 않음.
+- 형식: 기존 HTML·CSS·브라우저 JavaScript로 구성. 신규 라이브러리·프레임워크·서버 도입 없음. 캡처 3개를 data URL로 포함해 발표 자료 자체는 HTML 파일 하나로 실행.
+- 자료 근거: `docs/project-overview.md`, `docs/planning.md`, `docs/api-spec.md`, `README.md`, `catalog.js`와 실제 화면. ACE 개별 운동 페이지 3개를 웹에서 다시 확인하고 4페이지에 링크 표시. 추천·저장·AI는 미구현 계획으로 표시. 사용자 문제 문구는 인터뷰 인용이 아닌 상황 예시로 명시.
+- 캡처·검증 환경: macOS Google Chrome headless, 기존 번들 Playwright 사용, `file:` URL 직접 실행. 부위 선택·별칭 검색·운동 상세를 실제 조작해 화면을 캡처. 도구를 프로젝트 의존성으로 설치하지 않음.
+- 검증 결과: 발표 자료 40개 항목 통과, 콘솔 오류 0개. 1440·1280·768·390·320px 각각 5페이지의 가로 넘침·하단 겹침·이미지 로딩 확인. 이전·다음·페이지 번호·방향키·Home/End·경계·새로고침·브라우저 뒤로 가기 확인. 인쇄용 임시 PDF의 페이지 수 5개 확인.
+- 수정 루프: 최초 35/40 통과. 3·4페이지에서 콘텐츠와 하단 문구가 겹쳐 간격·문구·캡처 표시 높이 조정 1회, 재검증 40/40 통과. 실제 생성된 5페이지 데스크톱 캡처와 모바일 캡처를 시각 확인.
+- 관련 문서: `README.md`에 실행·조작법 및 제품 링크 사용 조건, `docs/project-overview.md`에 발표 자료 연결, `loop-log.md`에 실패·수정·재검증 결과 기록. 제품 기능과 API 계약 변경 없음.
+- 참고: [MDN KeyboardEvent.key](https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key) 확인. 외부 운동 자료는 기존 카탈로그의 ACE 출처를 재확인했으며 전문가 검수 완료로 표현하지 않음.
+- 남은 확인: 실제 발표용 화면에서 전체 화면 전환과 실제 프린터 출력은 자동 검증하지 않음. 앱 기존 전체 기능 44개를 이번 발표 자료 제작에서 다시 검증했다고 기록하지 않음.
+
 ## 2026년 9월 30일 README 작성
 
 - 사용자 요청: ‘리드미 작성’.
