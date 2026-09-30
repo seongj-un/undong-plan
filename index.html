@@ -7,6 +7,7 @@
   <title>운동 첫걸음 · 부위와 기구 찾기</title>
   <link rel="stylesheet" href="styles.css">
   <script src="catalog.js" defer></script>
+  <script src="recommend.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -20,12 +21,14 @@
       <p class="eyebrow">YOUR FIRST MOVE</p>
       <h1 id="page-title">어디부터 운동할지,<br>함께 찾아볼까요?</h1>
       <p class="intro-copy">운동하고 싶은 부위부터, 눈앞에 있는 기구부터.<br>기구 이름과 사용법을 하나씩 알아보세요.</p>
+      <div class="intro-actions"><button type="button" class="primary-button" data-go-view="recommend">오늘의 추천 받기 <span aria-hidden="true">→</span></button><button type="button" class="secondary-button" data-go-view="body">부위·기구 둘러보기</button></div>
       <div class="intro-summary"><span>로그인 없이 바로 탐색</span><span>운동 3개 · 기구 3개</span></div>
       <div class="intro-art" aria-hidden="true"><span class="art-orbit"></span><span class="art-line"></span><span class="art-weight"></span><span class="art-caption">START<br>SMALL.</span></div>
     </section>
     <nav class="view-switch" aria-label="탐색 방식">
       <button type="button" data-view="body" aria-pressed="true" aria-controls="body-view">부위로 찾기</button>
       <button type="button" data-view="equipment" aria-pressed="false" aria-controls="equipment-view">기구로 찾기</button>
+      <button type="button" data-view="recommend" aria-pressed="false" aria-controls="recommend-view">오늘의 추천</button>
     </nav>
     <section id="body-view" class="explore" aria-labelledby="body-title">
       <aside class="body-picker">
@@ -49,8 +52,38 @@
       <div class="section-heading equipment-count"><h3>기구 목록</h3><p id="equipment-count" class="muted" role="status" aria-live="polite"></p></div>
       <div id="equipment-list" class="card-grid"></div>
     </section>
+    <section id="recommend-view" class="recommend-view" aria-labelledby="recommend-title" hidden>
+      <div class="section-heading"><div><p class="eyebrow">03 / TODAY</p><h2 id="recommend-title">오늘 할 운동을 골라 드릴게요</h2></div></div>
+      <div class="recommend-layout">
+        <form id="recommend-form" class="recommend-form" novalidate>
+          <fieldset class="field-group">
+            <legend>사용할 수 있는 기구를 확인했나요? <span class="required">필수</span></legend>
+            <label class="choice"><input type="radio" name="equipmentAvailability" value="confirmed"> 네, 확인했어요</label>
+            <label class="choice"><input type="radio" name="equipmentAvailability" value="unknown"> 아직 모르겠어요</label>
+          </fieldset>
+          <fieldset class="field-group" aria-describedby="equipment-choice-help">
+            <legend>사용할 수 있는 기구</legend>
+            <p id="equipment-choice-help" class="muted"></p>
+            <div id="available-equipment" class="choice-list"></div>
+          </fieldset>
+          <fieldset class="field-group">
+            <legend>선호 부위 <span class="optional">선택</span></legend>
+            <p class="muted">고르면 그 부위가 주 사용 부위인 운동만 추천해요. 비워 두면 자동으로 골라요.</p>
+            <div id="preferred-parts" class="choice-chips"></div>
+          </fieldset>
+          <fieldset class="field-group">
+            <legend>제외 부위 <span class="optional">선택</span></legend>
+            <p class="muted">오늘 쉬고 싶은 부위를 고르세요. 그 부위가 주 사용 부위이거나 출처의 대상 부위인 운동은 추천하지 않아요.</p>
+            <div id="excluded-parts" class="choice-chips"></div>
+          </fieldset>
+          <div class="field-row"><label for="max-items">최대 추천 수</label><select id="max-items"><option value="1">1개</option><option value="2">2개</option><option value="3" selected>3개</option></select></div>
+          <button type="submit" class="primary-button">추천 받기 <span aria-hidden="true">→</span></button>
+        </form>
+        <div id="recommend-results" class="recommend-results"><div class="empty-state"><strong>조건을 고르고 추천을 받아 보세요.</strong><p>선택한 기구로 할 수 있는 운동만 보여 드려요.</p></div></div>
+      </div>
+    </section>
     <section class="content-note" aria-label="콘텐츠 안내"><span class="note-symbol" aria-hidden="true">i</span><div><strong>먼저 알아두세요</strong><p>이 화면은 출처를 확인한 안내 초안입니다. 전문가 검수와 개인별 적합성 확인은 아직 진행하지 않았어요. 기구별 조절 방법은 현장의 기구 안내를 확인하세요.</p></div></section>
-    <noscript><p class="empty-state">부위 탐색과 기구 검색을 사용하려면 브라우저에서 JavaScript를 켜 주세요.</p></noscript>
+    <noscript><p class="empty-state">부위 탐색, 기구 검색과 오늘의 추천을 사용하려면 브라우저에서 JavaScript를 켜 주세요.</p></noscript>
   </main>
   <footer><span>운동 첫걸음</span><span>작은 시작을 위한 운동 안내</span></footer>
   <dialog id="detail-dialog" aria-labelledby="detail-title">

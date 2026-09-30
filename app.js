@@ -75,6 +75,75 @@
     byId('equipment-query').focus();
   }
 
+  function showView(name) {
+    ['body', 'equipment', 'recommend'].forEach(view => { byId(`${view}-view`).hidden = view !== name; });
+    document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', String(item.dataset.view === name)));
+  }
+
+  const STATUS_LABELS = { recommended: '추천 완료', partial: '일부만 추천', needs_equipment_confirmation: '기구 확인 필요', no_candidates: '추천 후보 없음' };
+  const FIELD_LABELS = { equipmentAvailability: '기구 확인 여부', availableEquipmentIds: '사용할 수 있는 기구', preferredBodyPartIds: '선호 부위', excludedBodyPartIds: '제외 부위', maxItems: '최대 추천 수' };
+
+  function renderRecommendForm() {
+    byId('available-equipment').innerHTML = sorted(CATALOG.equipment).map(item => `<div class="equipment-choice"><label><input type="checkbox" name="availableEquipment" value="${item.id}"><span>${escapeHtml(item.name)}<small>별칭 · ${item.aliases.slice(0, 2).map(escapeHtml).join(', ')}</small></span></label><button type="button" class="text-button" data-equipment="${item.id}" aria-label="${escapeHtml(item.name)} 설명 보기">설명</button></div>`).join('');
+    const chips = name => CATALOG.bodyParts.map(part => `<label><input type="checkbox" name="${name}" value="${part.id}"> ${escapeHtml(part.name)}</label>`).join('');
+    byId('preferred-parts').innerHTML = chips('preferredBodyPart');
+    byId('excluded-parts').innerHTML = chips('excludedBodyPart');
+    syncEquipmentChoices();
+  }
+
+  // 확인하지 않은 기구를 사용 가능한 기구로 간주하지 않도록 확인 전에는 선택을 막는다.
+  function syncEquipmentChoices() {
+    const confirmed = byId('recommend-form').querySelector('input[name="equipmentAvailability"]:checked')?.value === 'confirmed';
+    byId('available-equipment').querySelectorAll('input').forEach(input => {
+      input.disabled = !confirmed;
+      if (!confirmed) input.checked = false;
+    });
+    byId('equipment-choice-help').textContent = confirmed ? '확인한 기구만 선택하세요. 쓸 수 있는 기구가 없다면 비워 두세요.' : '‘네, 확인했어요’를 고르면 선택할 수 있어요. 이름을 모르면 설명에서 별칭을 확인하세요.';
+  }
+
+  function readRecommendRequest() {
+    const form = byId('recommend-form');
+    const checked = name => [...form.querySelectorAll(`input[name="${name}"]:checked`)].map(input => input.value);
+    const availability = form.querySelector('input[name="equipmentAvailability"]:checked')?.value;
+    const request = {
+      availableEquipmentIds: availability === 'confirmed' ? checked('availableEquipment') : [],
+      preferredBodyPartIds: checked('preferredBodyPart'),
+      excludedBodyPartIds: checked('excludedBodyPart'),
+      maxItems: Number(byId('max-items').value)
+    };
+    if (availability) request.equipmentAvailability = availability;
+    return request;
+  }
+
+  function recommendCard(item) {
+    const exercise = item.exercise;
+    const draft = !CATALOG.exercises.find(entry => entry.id === exercise.id)?.review;
+    const secondary = exercise.secondaryBodyPartIds ? exercise.secondaryBodyPartIds.map(bodyName).join(' · ') || '없음' : '미정 · 전문가 검수 대기';
+    return `<li class="recommend-card"><div class="tags"><span>주 사용 부위 · ${escapeHtml(bodyName(exercise.primaryBodyPartId))}</span>${draft ? '<span class="draft-tag">검수 전 초안</span>' : ''}</div>
+      <h3>${escapeHtml(exercise.name)}</h3>
+      <dl class="recommend-facts"><div><dt>보조 부위</dt><dd>${escapeHtml(secondary)}</dd></div><div><dt>사용 기구</dt><dd>${exercise.equipmentIds.map(id => `<button class="text-button" data-equipment="${id}">${escapeHtml(equipmentById(id).name)} <span aria-hidden="true">↗</span></button>`).join(' ')}</dd></div></dl>
+      <p class="reason"><strong>추천 이유</strong>${escapeHtml(item.reason)}</p>
+      <button class="detail-button" data-exercise="${exercise.id}" aria-label="${escapeHtml(exercise.name)} 사용법 보기">사용법 보기 <span aria-hidden="true">→</span></button></li>`;
+  }
+
+  function renderRecommendation(request, response) {
+    const results = byId('recommend-results');
+    if (response.error) {
+      const lines = response.error.code === 'CONFLICTING_BODY_PARTS'
+        ? request.preferredBodyPartIds.filter(id => request.excludedBodyPartIds.includes(id)).map(id => `${bodyName(id)}: 선호 부위와 제외 부위에 모두 선택되어 있어요. 한쪽에서 선택을 해제해 주세요.`)
+        : response.error.details.map(detail => `${FIELD_LABELS[detail.field.replace(/\[\d+\]$/, '')] ?? detail.field}: ${detail.reason}`);
+      results.innerHTML = `<div class="result-banner status-error" tabindex="-1"><p class="eyebrow">입력 수정 필요</p><strong>${escapeHtml(response.error.message)}</strong><ul>${lines.map(line => `<li>${escapeHtml(line)}</li>`).join('')}</ul><p class="muted">입력은 그대로 두었어요. 수정한 뒤 다시 추천을 받아 보세요.</p></div>`;
+    } else {
+      const { status, message, requestedCount, returnedCount, items, rulesVersion } = response.data;
+      const action = status === 'needs_equipment_confirmation' ? '<button type="button" class="secondary-button" data-go-view="equipment">기구로 찾기에서 확인하기 <span aria-hidden="true">→</span></button>' : '';
+      const draftNote = RECOMMENDER.INCLUDE_UNREVIEWED_DRAFT ? ' 전문가 검수 전 안내 초안을 미리보기로 사용합니다.' : '';
+      results.innerHTML = `<div class="result-banner status-${status}" tabindex="-1"><p class="eyebrow">${STATUS_LABELS[status]}</p><strong>${escapeHtml(message)}</strong><p class="muted">요청 ${requestedCount}개 · 추천 ${returnedCount}개</p>${action}</div>
+        ${items.length ? `<ol class="recommend-list">${items.map(recommendCard).join('')}</ol>` : ''}
+        <p class="review-note">추천은 입력 조건과 정렬 규칙(${escapeHtml(rulesVersion)})으로 계산한 결과이며 운동 처방이 아닙니다. 무게·세트·횟수는 제공하지 않아요.${draftNote}</p>`;
+    }
+    results.querySelector('.result-banner').focus();
+  }
+
   byId('body-options').innerHTML = [{ id: 'all', name: '전체' }, ...CATALOG.bodyParts].map(part => `<button type="button" data-body-part="${part.id}" aria-pressed="${part.id === 'all'}">${escapeHtml(part.name)} <span aria-hidden="true">↗</span></button>`).join('');
   byId('body-options').addEventListener('click', event => {
     const button = event.target.closest('[data-body-part]');
@@ -85,25 +154,32 @@
   document.querySelector('.view-switch').addEventListener('click', event => {
     const button = event.target.closest('[data-view]');
     if (!button) return;
-    const isBody = button.dataset.view === 'body';
-    byId('body-view').hidden = !isBody;
-    byId('equipment-view').hidden = isBody;
-    document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+    showView(button.dataset.view);
   });
   document.addEventListener('click', event => {
-    const button = event.target.closest('[data-exercise], [data-equipment], [data-reset-search]');
+    const button = event.target.closest('[data-exercise], [data-equipment], [data-reset-search], [data-go-view]');
     if (!button) return;
-    if (button.hasAttribute('data-reset-search')) resetSearch();
+    if (button.dataset.goView) {
+      showView(button.dataset.goView);
+      document.querySelector(`.view-switch [data-view="${button.dataset.goView}"]`).focus();
+    } else if (button.hasAttribute('data-reset-search')) resetSearch();
     else if (button.dataset.exercise) showExercise(button.dataset.exercise, button);
     else showEquipment(button.dataset.equipment, button);
   });
   byId('equipment-query').addEventListener('input', renderEquipment);
   byId('equipment-search').addEventListener('submit', event => { event.preventDefault(); renderEquipment(); });
   byId('clear-search').addEventListener('click', resetSearch);
+  byId('recommend-form').addEventListener('change', event => { if (event.target.name === 'equipmentAvailability') syncEquipmentChoices(); });
+  byId('recommend-form').addEventListener('submit', event => {
+    event.preventDefault();
+    const request = readRecommendRequest();
+    renderRecommendation(request, RECOMMENDER.recommendToday(request));
+  });
   dialog.addEventListener('close', () => {
     if (dialogTrigger?.isConnected) dialogTrigger.focus({ preventScroll: true });
     dialogTrigger = null;
   });
   renderExercises();
   renderEquipment();
+  renderRecommendForm();
 })();
