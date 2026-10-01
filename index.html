@@ -46,7 +46,8 @@
       <div class="section-heading"><div><p class="eyebrow">02 / EQUIPMENT</p><h2 id="equipment-title">어떤 기구를 찾고 있나요?</h2></div></div>
       <form id="equipment-search" role="search">
         <label for="equipment-query">기구 이름 또는 별칭</label>
-        <div class="search-field"><span aria-hidden="true">⌕</span><input id="equipment-query" type="search" placeholder="예: 체스트 프레스, lat pulldown" maxlength="50" autocomplete="off" aria-describedby="search-help"><button type="button" id="clear-search">초기화</button></div>
+        <div class="search-field"><span aria-hidden="true">⌕</span><input id="equipment-query" type="search" placeholder="예: 체스트 프레스, lat pulldown" maxlength="50" autocomplete="off" aria-describedby="search-help" aria-errormessage="search-error"><button type="submit">검색</button><button type="button" id="clear-search">초기화</button></div>
+        <p id="search-error" class="muted" aria-live="polite" hidden><strong>기구 이름 또는 별칭을 입력해 주세요. 공백만으로는 검색할 수 없어요.</strong></p>
         <p id="search-help" class="muted">한글·영문 이름과 별칭으로 검색할 수 있어요.</p>
       </form>
       <div class="section-heading equipment-count"><h3>기구 목록</h3><p id="equipment-count" class="muted" role="status" aria-live="polite"></p></div>

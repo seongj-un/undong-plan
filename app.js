@@ -69,8 +69,27 @@
     showDetail(`<p class="detail-kicker">기구 안내</p><h2 id="detail-title" tabindex="-1">${escapeHtml(item.name)}</h2><p class="detail-description">${escapeHtml(item.description)}</p><dl class="detail-facts"><div><dt>검색할 수 있는 별칭</dt><dd>${item.aliases.map(escapeHtml).join(', ')}</dd></div><div><dt>기구 사진</dt><dd>미제공 · 사진 사용 권한 확인 대기</dd></div></dl><h3>이 기구를 사용하는 운동</h3><div class="related-exercises">${exercises.map(exercise => `<button class="related-button" data-exercise="${exercise.id}"><span>${escapeHtml(exercise.name)}<small>${exercise.sourceBodyPartIds.map(bodyName).map(escapeHtml).join(' · ')}</small></span><span aria-hidden="true">→</span></button>`).join('')}</div><h3>연결 근거</h3>${sourceList(sources)}<p class="review-note">같은 이름의 머신도 모델마다 구조와 조절 방법이 다를 수 있습니다. 사진과 전문가 검수는 준비 중입니다.</p>`, trigger);
   }
 
+  function clearSearchError() {
+    byId('search-error').hidden = true;
+    byId('equipment-query').removeAttribute('aria-invalid');
+  }
+
+  function submitEquipmentSearch(event) {
+    event.preventDefault();
+    const input = byId('equipment-query');
+    if (!normalize(input.value)) {
+      byId('search-error').hidden = false;
+      input.setAttribute('aria-invalid', 'true');
+      input.focus();
+      return;
+    }
+    clearSearchError();
+    renderEquipment();
+  }
+
   function resetSearch() {
     byId('equipment-query').value = '';
+    clearSearchError();
     renderEquipment();
     byId('equipment-query').focus();
   }
@@ -166,8 +185,11 @@
     else if (button.dataset.exercise) showExercise(button.dataset.exercise, button);
     else showEquipment(button.dataset.equipment, button);
   });
-  byId('equipment-query').addEventListener('input', renderEquipment);
-  byId('equipment-search').addEventListener('submit', event => { event.preventDefault(); renderEquipment(); });
+  byId('equipment-query').addEventListener('input', () => {
+    if (normalize(byId('equipment-query').value)) clearSearchError();
+    renderEquipment();
+  });
+  byId('equipment-search').addEventListener('submit', submitEquipmentSearch);
   byId('clear-search').addEventListener('click', resetSearch);
   byId('recommend-form').addEventListener('change', event => { if (event.target.name === 'equipmentAvailability') syncEquipmentChoices(); });
   byId('recommend-form').addEventListener('submit', event => {
