@@ -33,19 +33,23 @@
     const validIds = (values, catalog) => Array.isArray(values)
       && values.every(id => typeof id === 'string' && catalog.some(item => item.id === id))
       && new Set(values).size === values.length;
-    return [undefined, 'confirmed', 'unknown'].includes(request.equipmentAvailability)
-      && validIds(request.availableEquipmentIds, CATALOG.equipment)
+    return Object.keys(request).every(key => ['preferredBodyPartIds', 'excludedBodyPartIds', 'maxItems'].includes(key))
       && validIds(request.preferredBodyPartIds, CATALOG.bodyParts)
       && validIds(request.excludedBodyPartIds, CATALOG.bodyParts)
-      && Number.isInteger(request.maxItems) && request.maxItems >= 1 && request.maxItems <= 3
-      && (request.equipmentAvailability === 'confirmed' || request.availableEquipmentIds.length === 0);
+      && Number.isInteger(request.maxItems) && request.maxItems >= 1 && request.maxItems <= 3;
   }
+
+  // 버전 1 저장값의 기구 입력은 더 쓰지 않으므로 부위 조건만 남긴다.
+  const withoutEquipment = request => (request && typeof request === 'object' && !Array.isArray(request)
+    ? { preferredBodyPartIds: request.preferredBodyPartIds, excludedBodyPartIds: request.excludedBodyPartIds, maxItems: request.maxItems }
+    : request);
+  const recommendByBodyPart = request => RECOMMENDER.recommendToday(request, CATALOG, { useEquipment: false });
 
   // 저장: 사용자 조작 후 현재 탐색 상태와 추천 조건을 키 하나에 기록한다.
   function saveAppState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        version: 1,
+        version: 2,
         view: selectedView,
         bodyPartId: selectedBodyPart,
         equipmentQuery: byId('equipment-query').value,
@@ -64,8 +68,11 @@
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw === null) return null;
-      const state = JSON.parse(raw);
-      if (!state || state.version !== 1 || !['body', 'equipment', 'recommend'].includes(state.view)
+      let state = JSON.parse(raw);
+      if (state && state.version === 1) {
+        state = { ...state, version: 2, recommendationRequest: withoutEquipment(state.recommendationRequest), lastRecommendationRequest: state.lastRecommendationRequest && withoutEquipment(state.lastRecommendationRequest) };
+      }
+      if (!state || state.version !== 2 || !['body', 'equipment', 'recommend'].includes(state.view)
         || !(state.bodyPartId === 'all' || CATALOG.bodyParts.some(part => part.id === state.bodyPartId))
         || typeof state.equipmentQuery !== 'string' || state.equipmentQuery.length > 50
         || typeof state.searchError !== 'boolean' || (state.searchError && normalize(state.equipmentQuery))
@@ -90,11 +97,7 @@
     if (state.searchError) byId('equipment-query').setAttribute('aria-invalid', 'true');
     const request = state.recommendationRequest;
     const form = byId('recommend-form');
-    form.querySelectorAll('input[name="equipmentAvailability"]').forEach(input => {
-      input.checked = input.value === request.equipmentAvailability;
-    });
     const selections = {
-      availableEquipment: request.availableEquipmentIds,
       preferredBodyPart: request.preferredBodyPartIds,
       excludedBodyPart: request.excludedBodyPartIds
     };
@@ -102,11 +105,10 @@
       form.querySelectorAll(`input[name="${name}"]`).forEach(input => { input.checked = ids.includes(input.value); });
     });
     byId('max-items').value = String(request.maxItems);
-    syncEquipmentChoices();
     renderExercises();
     renderEquipment();
     lastRecommendationRequest = state.lastRecommendationRequest;
-    if (lastRecommendationRequest) renderRecommendation(lastRecommendationRequest, RECOMMENDER.recommendToday(lastRecommendationRequest));
+    if (lastRecommendationRequest) renderRecommendation(lastRecommendationRequest, recommendByBodyPart(lastRecommendationRequest));
     showView(state.view, false);
   }
 
@@ -203,39 +205,23 @@
     if (persist) saveAppState();
   }
 
-  const STATUS_LABELS = { recommended: '추천 완료', partial: '일부만 추천', needs_equipment_confirmation: '기구 확인 필요', no_candidates: '추천 후보 없음' };
-  const FIELD_LABELS = { equipmentAvailability: '기구 확인 여부', availableEquipmentIds: '사용할 수 있는 기구', preferredBodyPartIds: '선호 부위', excludedBodyPartIds: '제외 부위', maxItems: '최대 추천 수' };
+  const STATUS_LABELS = { recommended: '추천 완료', partial: '일부만 추천', no_candidates: '추천 후보 없음' };
+  const FIELD_LABELS = { preferredBodyPartIds: '선호 부위', excludedBodyPartIds: '제외 부위', maxItems: '최대 추천 수' };
 
   function renderRecommendForm() {
-    byId('available-equipment').innerHTML = sorted(CATALOG.equipment).map(item => `<div class="equipment-choice"><label><input type="checkbox" name="availableEquipment" value="${item.id}"><span>${escapeHtml(item.name)}<small>별칭 · ${item.aliases.slice(0, 2).map(escapeHtml).join(', ')}</small></span></label><button type="button" class="text-button" data-equipment="${item.id}" aria-label="${escapeHtml(item.name)} 설명 보기">설명</button></div>`).join('');
     const chips = name => CATALOG.bodyParts.map(part => `<label><input type="checkbox" name="${name}" value="${part.id}"> ${escapeHtml(part.name)}</label>`).join('');
     byId('preferred-parts').innerHTML = chips('preferredBodyPart');
     byId('excluded-parts').innerHTML = chips('excludedBodyPart');
-    syncEquipmentChoices();
-  }
-
-  // 확인하지 않은 기구를 사용 가능한 기구로 간주하지 않도록 확인 전에는 선택을 막는다.
-  function syncEquipmentChoices() {
-    const confirmed = byId('recommend-form').querySelector('input[name="equipmentAvailability"]:checked')?.value === 'confirmed';
-    byId('available-equipment').querySelectorAll('input').forEach(input => {
-      input.disabled = !confirmed;
-      if (!confirmed) input.checked = false;
-    });
-    byId('equipment-choice-help').textContent = confirmed ? '확인한 기구만 선택하세요. 쓸 수 있는 기구가 없다면 비워 두세요.' : '‘네, 확인했어요’를 고르면 선택할 수 있어요. 이름을 모르면 설명에서 별칭을 확인하세요.';
   }
 
   function readRecommendRequest() {
     const form = byId('recommend-form');
     const checked = name => [...form.querySelectorAll(`input[name="${name}"]:checked`)].map(input => input.value);
-    const availability = form.querySelector('input[name="equipmentAvailability"]:checked')?.value;
-    const request = {
-      availableEquipmentIds: availability === 'confirmed' ? checked('availableEquipment') : [],
+    return {
       preferredBodyPartIds: checked('preferredBodyPart'),
       excludedBodyPartIds: checked('excludedBodyPart'),
       maxItems: Number(byId('max-items').value)
     };
-    if (availability) request.equipmentAvailability = availability;
-    return request;
   }
 
   function recommendCard(item) {
@@ -258,9 +244,8 @@
       results.innerHTML = `<div class="result-banner status-error" tabindex="-1"><p class="eyebrow">입력 수정 필요</p><strong>${escapeHtml(response.error.message)}</strong><ul>${lines.map(line => `<li>${escapeHtml(line)}</li>`).join('')}</ul><p class="muted">입력은 그대로 두었어요. 수정한 뒤 다시 추천을 받아 보세요.</p></div>`;
     } else {
       const { status, message, requestedCount, returnedCount, items, rulesVersion } = response.data;
-      const action = status === 'needs_equipment_confirmation' ? '<button type="button" class="secondary-button" data-go-view="equipment">기구로 찾기에서 확인하기 <span aria-hidden="true">→</span></button>' : '';
       const draftNote = RECOMMENDER.INCLUDE_UNREVIEWED_DRAFT ? ' 전문가 검수 전 안내 초안을 미리보기로 사용합니다.' : '';
-      results.innerHTML = `<div class="result-banner status-${status}" tabindex="-1"><p class="eyebrow">${STATUS_LABELS[status]}</p><strong>${escapeHtml(message)}</strong><p class="muted">요청 ${requestedCount}개 · 추천 ${returnedCount}개</p>${action}</div>
+      results.innerHTML = `<div class="result-banner status-${status}" tabindex="-1"><p class="eyebrow">${STATUS_LABELS[status]}</p><strong>${escapeHtml(message)}</strong><p class="muted">요청 ${requestedCount}개 · 추천 ${returnedCount}개</p></div>
         ${items.length ? `<ol class="recommend-list">${items.map(recommendCard).join('')}</ol>` : ''}
         <p class="review-note">추천은 입력 조건과 정렬 규칙(${escapeHtml(rulesVersion)})으로 계산한 결과이며 운동 처방이 아닙니다. 무게·세트·횟수는 제공하지 않아요.${draftNote}</p>`;
     }
@@ -297,15 +282,12 @@
   });
   byId('equipment-search').addEventListener('submit', submitEquipmentSearch);
   byId('clear-search').addEventListener('click', resetSearch);
-  byId('recommend-form').addEventListener('change', event => {
-    if (event.target.name === 'equipmentAvailability') syncEquipmentChoices();
-    saveAppState();
-  });
+  byId('recommend-form').addEventListener('change', saveAppState);
   byId('recommend-form').addEventListener('submit', event => {
     event.preventDefault();
     const request = readRecommendRequest();
     lastRecommendationRequest = request;
-    renderRecommendation(request, RECOMMENDER.recommendToday(request));
+    renderRecommendation(request, recommendByBodyPart(request));
     saveAppState();
   });
   dialog.addEventListener('close', () => {

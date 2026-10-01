@@ -123,17 +123,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--green); }
 .field-group { min-width: 0; margin: 0; padding: 0; border: 0; }
 .field-group legend { padding: 0; margin-bottom: 6px; font-size: 14px; font-weight: 650; }
 .field-group .muted { margin: 0 0 10px; font-size: 12px; }
-.required, .optional { margin-left: 6px; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-.required { background: #f8ecd7; color: #6f4708; }
-.optional { background: #f2f3eb; color: #585f53; }
-.choice { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 14px; }
-.choice-list { display: grid; gap: 6px; }
-.equipment-choice { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; }
-.equipment-choice label { display: flex; align-items: flex-start; gap: 10px; min-width: 0; font-size: 14px; }
-.equipment-choice input { margin-top: 5px; }
-.equipment-choice small { display: block; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
-.equipment-choice:has(input:disabled) label { color: var(--muted); }
-.equipment-choice:has(input:checked) { border-color: var(--green); background: #f2f5ed; }
+.optional { margin-left: 6px; padding: 1px 6px; border-radius: 4px; background: #f2f3eb; color: #585f53; font-size: 11px; font-weight: 600; }
 .choice-chips { display: flex; flex-wrap: wrap; gap: 7px; }
 .choice-chips label { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 9px; border: 1px solid var(--line); border-radius: 999px; background: #fff; font-size: 13px; cursor: pointer; }
 .choice-chips label:has(input:checked) { border-color: var(--green); background: #e4edda; font-weight: 650; }

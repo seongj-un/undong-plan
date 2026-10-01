@@ -8,6 +8,8 @@
 
 F01~F06의 [정적 화면](../index.html)은 내장된 `catalog.js` 데이터와 `recommend.js`로 동작하며 서버 API를 호출하지 않는다. 아래 경로는 [`server/server.js`](../server/server.js)에 구현했다. 서버는 `catalog.js`와 `recommend.js`를 `node:vm`으로 읽어 화면과 같은 추천 계산(`RECOMMENDER.recommendToday`)을 재사용하며, 추천 규칙을 따로 구현하지 않는다. F04~F06 추천 규칙과 계약은 변경하지 않는다.
 
+2026-10-01부터 로컬 화면은 오늘의 추천에서 기구를 입력받지 않는다. 화면은 같은 엔진을 `RECOMMENDER.recommendToday(request, CATALOG, { useEquipment: false })`로 호출하고 `equipmentAvailability`·`availableEquipmentIds`를 보내지 않는다. 이 모드는 `preferredBodyPartIds`·`excludedBodyPartIds`·`maxItems`만 받고, 기구 필드가 오면 `VALIDATION_ERROR`(정의되지 않은 필드)다. 기구 필터가 없고 상태는 `recommended`·`partial`·`no_candidates`뿐이며 `needs_equipment_confirmation`은 없다. 이유 코드는 `PREFERRED_BODY_PART` 또는 `AUTO_BODY_PART` 하나이며 `AVAILABLE_EQUIPMENT`는 없다. 아래 `POST /api/v1/recommendations/today` 계약은 바뀌지 않았다. 서버는 `useEquipment`를 지정하지 않아 기본값 `true`로 호출하므로 두 기구 필드는 여전히 필수다. 따라서 기구 입력은 로컬 화면과 API 계약이 다르며, API도 기구 입력을 없앨지는 [프로젝트 개요서](project-overview.md#사용자-결정-질문)의 미정 질문이다.
+
 현재 서버는 CORS 헤더를 보내지 않는다. 다른 출처에서 연 화면(`file:`로 연 `index.html` 포함)은 브라우저 정책상 응답을 읽을 수 없다. [MDN CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS) 화면과 API의 연결 방식(CORS 허용 또는 같은 출처 제공)은 미정이다.
 
 로컬 화면의 추천은 검수 전 초안을 미리보기 후보로 쓰고 `catalogVersion`을 `local-draft-2026-10-01`으로 표시한다. 서버는 검수 완료 운동만 후보로 쓴다. 이 로컬 미리보기 예외는 사용자 확인 대기이며 공개 API 계약의 변경이 아니다.
@@ -284,7 +286,7 @@ GET에는 요청 본문이 없다. 정의하지 않은 쿼리 매개변수나 �
 - `catalog.js`에 부위 설명이 없어 BodyPart의 `description`은 `"<부위 이름> 부위 운동을 찾아보세요."`로 만든다.
 - 목록은 공통 목록 규칙대로 식별자 오름차순이다. 부위 목록은 `arms`, `back`, `chest`… 순서라 화면의 표시 순서(가슴·등·하체…)와 다르다.
 - 추천의 `catalogVersion`은 `server-` 뒤에 공개 카탈로그 JSON의 SHA-256 앞 12자리를 붙인다. 기구·운동 등 공개 데이터가 달라지면 값도 바뀐다.
-- 추천은 `recommend.js`를 `includeUnreviewedDraft: false`로 호출한다. 추천 입력 검증 순서는 `VALIDATION_ERROR` → `UNKNOWN_CATALOG_ID` → `CONFLICTING_BODY_PARTS`다.
+- 추천은 `recommend.js`를 `includeUnreviewedDraft: false`로 호출한다. `useEquipment`는 지정하지 않아 기본값 `true`(기구 입력 필수)를 쓴다. 추천 입력 검증 순서는 `VALIDATION_ERROR` → `UNKNOWN_CATALOG_ID` → `CONFLICTING_BODY_PARTS`다.
 
 ### 명세 오류 표에 없는 상태·오류
 

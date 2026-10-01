@@ -59,18 +59,8 @@
       <div class="recommend-layout">
         <form id="recommend-form" class="recommend-form" novalidate>
           <fieldset class="field-group">
-            <legend>사용할 수 있는 기구를 확인했나요? <span class="required">필수</span></legend>
-            <label class="choice"><input type="radio" name="equipmentAvailability" value="confirmed"> 네, 확인했어요</label>
-            <label class="choice"><input type="radio" name="equipmentAvailability" value="unknown"> 아직 모르겠어요</label>
-          </fieldset>
-          <fieldset class="field-group" aria-describedby="equipment-choice-help">
-            <legend>사용할 수 있는 기구</legend>
-            <p id="equipment-choice-help" class="muted"></p>
-            <div id="available-equipment" class="choice-list"></div>
-          </fieldset>
-          <fieldset class="field-group">
             <legend>선호 부위 <span class="optional">선택</span></legend>
-            <p class="muted">고르면 그 부위가 주 사용 부위인 운동만 추천해요. 비워 두면 자동으로 골라요.</p>
+            <p class="muted">고르면 그 부위가 주 사용 부위인 운동만 추천해요. 비워 두면 여러 부위에서 자동으로 골라요.</p>
             <div id="preferred-parts" class="choice-chips"></div>
           </fieldset>
           <fieldset class="field-group">
@@ -81,7 +71,7 @@
           <div class="field-row"><label for="max-items">최대 추천 수</label><select id="max-items"><option value="1">1개</option><option value="2">2개</option><option value="3" selected>3개</option></select></div>
           <button type="submit" class="primary-button">추천 받기 <span aria-hidden="true">→</span></button>
         </form>
-        <div id="recommend-results" class="recommend-results"><div class="empty-state"><strong>조건을 고르고 추천을 받아 보세요.</strong><p>선택한 기구로 할 수 있는 운동만 보여 드려요.</p></div></div>
+        <div id="recommend-results" class="recommend-results"><div class="empty-state"><strong>조건을 고르고 추천을 받아 보세요.</strong><p>선호 부위에 맞는 운동과 필요한 기구를 이유와 함께 보여 드려요.</p></div></div>
       </div>
     </section>
     <section class="content-note" aria-label="콘텐츠 안내"><span class="note-symbol" aria-hidden="true">i</span><div><strong>먼저 알아두세요</strong><p>이 화면은 출처를 확인한 안내 초안입니다. 전문가 검수와 개인별 적합성 확인은 아직 진행하지 않았어요. 기구별 조절 방법은 현장의 기구 안내를 확인하세요.</p></div></section>

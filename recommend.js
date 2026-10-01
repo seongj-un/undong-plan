@@ -9,6 +9,7 @@ const RECOMMENDER = (() => {
   // 로컬 화면의 미리보기 예외: 검수 전 안내 초안도 후보로 쓴다. 서버는 false로 호출해 검수 완료 운동만 쓴다.
   const INCLUDE_UNREVIEWED_DRAFT = true;
   const FIELDS = ['equipmentAvailability', 'availableEquipmentIds', 'preferredBodyPartIds', 'excludedBodyPartIds', 'maxItems'];
+  const EQUIPMENT_FIELDS = ['equipmentAvailability', 'availableEquipmentIds'];
   const ERROR_MESSAGES = {
     VALIDATION_ERROR: '입력 형식을 확인해 주세요.',
     UNKNOWN_CATALOG_ID: '카탈로그에 없는 항목이 포함되어 있습니다.',
@@ -40,22 +41,26 @@ const RECOMMENDER = (() => {
   }
 
   // 모든 입력 검증을 추천 계산보다 먼저 수행한다. 순서: 형식 → 카탈로그 ID → 부위 충돌.
-  function validate(body, catalog) {
+  // useEquipment가 false면 기구 입력 없이 부위 조건만 받는다(로컬 화면).
+  function validate(body, catalog, useEquipment) {
     if (body === null || typeof body !== 'object' || Array.isArray(body)) return failure('VALIDATION_ERROR', []);
     const errors = [];
     const unknownIds = [];
-    Object.keys(body).filter(key => !FIELDS.includes(key)).forEach(field => errors.push({ field, reason: '정의되지 않은 필드입니다.' }));
+    const fields = useEquipment ? FIELDS : FIELDS.filter(field => !EQUIPMENT_FIELDS.includes(field));
+    Object.keys(body).filter(key => !fields.includes(key)).forEach(field => errors.push({ field, reason: '정의되지 않은 필드입니다.' }));
 
     const availability = body.equipmentAvailability;
-    if (!has(body, 'equipmentAvailability')) errors.push({ field: 'equipmentAvailability', reason: '필수 항목입니다.' });
-    else if (availability !== 'unknown' && availability !== 'confirmed') errors.push({ field: 'equipmentAvailability', reason: 'unknown 또는 confirmed여야 합니다.' });
+    if (useEquipment) {
+      if (!has(body, 'equipmentAvailability')) errors.push({ field: 'equipmentAvailability', reason: '필수 항목입니다.' });
+      else if (availability !== 'unknown' && availability !== 'confirmed') errors.push({ field: 'equipmentAvailability', reason: 'unknown 또는 confirmed여야 합니다.' });
+    }
 
     const equipmentIds = new Set(catalog.equipment.map(item => item.id));
     const bodyPartIds = new Set(catalog.bodyParts.map(part => part.id));
-    const available = checkIdArray(body, 'availableEquipmentIds', true, equipmentIds, errors, unknownIds);
+    const available = useEquipment ? checkIdArray(body, 'availableEquipmentIds', true, equipmentIds, errors, unknownIds) : [];
     const preferred = checkIdArray(body, 'preferredBodyPartIds', false, bodyPartIds, errors, unknownIds);
     const excluded = checkIdArray(body, 'excludedBodyPartIds', false, bodyPartIds, errors, unknownIds);
-    if (availability === 'unknown' && available.length) errors.push({ field: 'availableEquipmentIds', reason: '기구 확인 상태가 unknown이면 빈 배열이어야 합니다.' });
+    if (useEquipment && availability === 'unknown' && available.length) errors.push({ field: 'availableEquipmentIds', reason: '기구 확인 상태가 unknown이면 빈 배열이어야 합니다.' });
 
     let maxItems = 3;
     if (has(body, 'maxItems')) {
@@ -75,12 +80,13 @@ const RECOMMENDER = (() => {
   const involvedBodyPartIds = exercise => [exercise.primaryBodyPartId, ...(exercise.secondaryBodyPartIds ?? exercise.sourceBodyPartIds ?? [])];
   const summary = ({ id, name, primaryBodyPartId, secondaryBodyPartIds, equipmentIds, difficulty }) => ({ id, name, primaryBodyPartId, secondaryBodyPartIds, equipmentIds, difficulty });
 
-  function reasonText(exercise, catalog, preferred, excluded) {
+  function reasonText(exercise, catalog, preferred, excluded, useEquipment) {
     const partName = id => catalog.bodyParts.find(part => part.id === id)?.name ?? id;
     const equipment = exercise.equipmentIds.map(id => catalog.equipment.find(item => item.id === id).name).join(', ');
     const part = partName(exercise.primaryBodyPartId);
-    let text = `선택한 기구(${equipment})를 모두 사용할 수 있으며, `;
-    text += preferred.length ? `선호 부위인 ${part} 운동에 해당합니다.` : `선호 부위를 지정하지 않아 부위 순서 규칙에 따라 ${part} 운동을 골랐습니다.`;
+    let text = useEquipment ? `선택한 기구(${equipment})를 모두 사용할 수 있으며, ` : '';
+    if (useEquipment) text += preferred.length ? `선호 부위인 ${part} 운동에 해당합니다.` : `선호 부위를 지정하지 않아 부위 순서 규칙에 따라 ${part} 운동을 골랐습니다.`;
+    else text += preferred.length ? `선호 부위인 ${part} 운동입니다.` : `선호 부위를 지정하지 않아 부위 순서 규칙에 따라 ${part} 운동을 골랐습니다.`;
     if (excluded.length) {
       const names = excluded.map(partName).join('·');
       // 보조 부위가 미정이면 확인한 범위(주 사용 부위와 출처의 대상 부위)만 말한다.
@@ -91,17 +97,17 @@ const RECOMMENDER = (() => {
     return text;
   }
 
-  function recommendToday(body, catalog = CATALOG, { includeUnreviewedDraft = INCLUDE_UNREVIEWED_DRAFT, catalogVersion = CATALOG_VERSION } = {}) {
-    const checked = validate(body, catalog);
+  function recommendToday(body, catalog = CATALOG, { includeUnreviewedDraft = INCLUDE_UNREVIEWED_DRAFT, catalogVersion = CATALOG_VERSION, useEquipment = true } = {}) {
+    const checked = validate(body, catalog, useEquipment);
     if (checked.error) return checked;
     const { equipmentAvailability, availableEquipmentIds, preferredBodyPartIds, excludedBodyPartIds, maxItems } = checked.request;
     const result = (status, items, message) => ({ data: { status, catalogVersion, rulesVersion: RULES_VERSION, requestedCount: maxItems, returnedCount: items.length, items, message } });
 
-    if (equipmentAvailability === 'unknown') return result('needs_equipment_confirmation', [], '사용할 수 있는 기구를 먼저 확인해 주세요. 기구 찾기에서 이름과 별칭으로 확인할 수 있어요.');
-    if (!availableEquipmentIds.length) return result('no_candidates', [], '확인한 기구 중 사용할 수 있는 기구가 없어 추천할 운동이 없어요. 없는 기구는 추천하지 않습니다.');
+    if (useEquipment && equipmentAvailability === 'unknown') return result('needs_equipment_confirmation', [], '사용할 수 있는 기구를 먼저 확인해 주세요. 기구 찾기에서 이름과 별칭으로 확인할 수 있어요.');
+    if (useEquipment && !availableEquipmentIds.length) return result('no_candidates', [], '확인한 기구 중 사용할 수 있는 기구가 없어 추천할 운동이 없어요. 없는 기구는 추천하지 않습니다.');
 
     const candidates = catalog.exercises.filter(exercise => isRecommendable(exercise, includeUnreviewedDraft)
-      && exercise.equipmentIds.every(id => availableEquipmentIds.includes(id))
+      && (!useEquipment || exercise.equipmentIds.every(id => availableEquipmentIds.includes(id)))
       && !involvedBodyPartIds(exercise).some(id => excludedBodyPartIds.includes(id))
       && (!preferredBodyPartIds.length || preferredBodyPartIds.includes(exercise.primaryBodyPartId)));
     // 부위 순서대로 한 개씩 순회하고, 자리가 남으면 같은 순서로 다음 운동을 고른다.
@@ -113,10 +119,10 @@ const RECOMMENDER = (() => {
 
     const items = picked.map(exercise => ({
       exercise: summary(exercise),
-      reasonCodes: ['AVAILABLE_EQUIPMENT', preferredBodyPartIds.length ? 'PREFERRED_BODY_PART' : 'AUTO_BODY_PART'],
-      reason: reasonText(exercise, catalog, preferredBodyPartIds, excludedBodyPartIds)
+      reasonCodes: [...(useEquipment ? ['AVAILABLE_EQUIPMENT'] : []), preferredBodyPartIds.length ? 'PREFERRED_BODY_PART' : 'AUTO_BODY_PART'],
+      reason: reasonText(exercise, catalog, preferredBodyPartIds, excludedBodyPartIds, useEquipment)
     }));
-    if (!items.length) return result('no_candidates', [], '입력 조건에 맞는 운동이 없어요. 조건은 그대로 두었습니다. 기구나 부위 조건을 바꿔 다시 요청해 보세요.');
+    if (!items.length) return result('no_candidates', [], `입력 조건에 맞는 운동이 없어요. 조건은 그대로 두었습니다. ${useEquipment ? '기구나 부위' : '부위'} 조건을 바꿔 다시 요청해 보세요.`);
     if (items.length < maxItems) return result('partial', items, `조건에 맞는 운동이 ${items.length}개뿐이라 요청한 ${maxItems}개보다 적게 추천해요. 조건은 바꾸지 않았습니다.`);
     return result('recommended', items, `입력 조건에 맞는 운동 ${items.length}개를 찾았습니다.`);
   }
