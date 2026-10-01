@@ -35,7 +35,7 @@
 2. `index.html`을 브라우저로 엽니다. 파일을 더블클릭해도 되고, 터미널에서 열어도 됩니다.
    - macOS: `open index.html`
    - Windows 명령 프롬프트: `start index.html`
-3. `index.html`, `styles.css`, `catalog.js`, `recommend.js`, `app.js`는 같은 폴더에 두세요.
+3. `index.html`, `styles.css`, `catalog.js`, `recommend.js`, `app.js`, `favicon.png`(사이트 아이콘)는 같은 폴더에 두세요.
 
 설치나 서버 없이 바로 열립니다. 내려받지 않고 [배포 주소](https://seongj-un.github.io/undong-plan/)로 열어도 돼요. 개발용 API 서버도 있지만 화면을 쓰는 데는 필요 없어요. 자세한 내용은 [API 명세서](docs/api-spec.md)를 보세요.
 

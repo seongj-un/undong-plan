@@ -1,5 +1,21 @@
 # 운동 부위와 기구 추천 프로젝트 작업 기록
 
+## 2026-10-01 GitHub Pages favicon 404 수정 (반복 규칙 1회차)
+
+- 사용자 확인: 배포 주소의 실패는 콘솔의 `favicon.ico` 404.
+- 원인: 페이지에 아이콘 지정이 없어 브라우저가 출처 루트 `https://seongj-un.github.io/favicon.ico`를 자동 요청했고, 그 위치는 이 프로젝트 사이트(`/undong-plan/`) 밖이라 파일이 없음. 파일 이름 대소문자·경로 문제는 아님.
+- 변경: `favicon.png` 신규(64×64 PNG, 사이트 로고와 같은 초록 원·흰 ↗, headless Chrome으로 렌더링). `index.html` 8행과 `presentation.html` 8행에 `<link rel="icon" href="favicon.png" type="image/png" sizes="64x64">` 추가(상대 경로라 `/undong-plan/favicon.png`로 요청). README·AGENTS.md 파일 목록에 `favicon.png` 추가.
+- 형식 근거: SVG 아이콘은 Safari 26부터 지원이라 모든 브라우저가 지원하는 PNG 사용([Can I use · SVG favicons](https://caniuse.com/link-icon-svg), [MDN rel=icon](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel), 확인일 2026-10-01).
+- 재검증: GitHub Pages와 같은 `/undong-plan/` 경로 구조의 임시 `127.0.0.1:52812` 미리보기(화면 파일 7개만 제공, 루트는 404)에서 두 페이지 모두 아이콘 200·`/favicon.ico` 요청 없음·콘솔 오류 0. 테스트 후 종료. `file:` 직접 실행 회귀 15개 통과(스크립트의 오래된 기대값 2개는 변경 전 HEAD에서도 같은 실패를 확인한 뒤 현재 동작에 맞게 갱신).
+- 배포 주소 재확인은 푸시 후 가능. 코드 수정 1회.
+
+## 2026-10-01 GitHub Pages 실패 수정 요청: 사전 점검
+
+- 요청: AGENTS.md 반복 규칙에 따른 배포 주소 실패 수정. 실패 기준·한 일·실제 결과·콘솔 오류 칸은 예시 문구(style.css 404) 그대로여서 실제 실패 정보는 받지 못함.
+- 점검: 배포 커밋 `202678b`가 로컬·원격 HEAD와 같음. `index.html`·`presentation.html`이 참조하는 로컬 파일 5개(`styles.css`, `catalog.js`, `recommend.js`, `app.js`, `index.html`)가 Git의 실제 파일 이름과 대소문자까지 일치하고 배포 주소에서 모두 200.
+- 배포 주소 동작(macOS Google Chrome headless): 로딩·부위 탐색·별칭 검색·추천·상세·새로고침 복원·발표 자료 이미지 7개 통과. 콘솔 오류는 사이트 루트 `/favicon.ico` 404뿐(브라우저 자동 요청, 앱 파일 아님).
+- 코드 수정 0회. 실패를 재현하지 못해 추측 수정하지 않고 실제 실패 정보를 질문함.
+
 ## 2026-10-01 GitHub Pages 배포
 
 - 사용자 요청: ‘깃페이지로 배포 하렴’.

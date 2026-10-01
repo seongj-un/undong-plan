@@ -54,7 +54,7 @@
 
 ## 실행 방법
 
-현재 `index.html`, `styles.css`, `catalog.js`, `recommend.js`, `app.js`로 된 정적 화면과 `server/`의 선택 실행 API 서버가 있다. 화면 실행 기준은 다음과 같다.
+현재 `index.html`, `styles.css`, `catalog.js`, `recommend.js`, `app.js`와 사이트 아이콘 `favicon.png`로 된 정적 화면과 `server/`의 선택 실행 API 서버가 있다. 화면 실행 기준은 다음과 같다.
 
 - 빌드 도구, 서버, 프레임워크 없이 프로젝트 루트의 `index.html`을 브라우저로 직접 연다.
 - 프로젝트 폴더에서 Windows 명령 프롬프트는 `start index.html`, macOS 터미널은 `open index.html`로 연다.
@@ -62,7 +62,7 @@
 - 이 방식의 화면은 서버 API가 없어도 탐색과 추천을 확인할 수 있도록 구성한다. 화면은 내장 카탈로그와 `recommend.js`로 동작하며 서버 API를 호출하지 않는다. 화면과 서버 API의 연결 방식(CORS 또는 같은 출처 제공)은 미정이며 연결 전에 사용자에게 질문한다.
 - 로컬 파일을 직접 여는 방식에서 동작하지 않는 기능이 필요하면 제약과 대안을 먼저 설명한다. 화면 실행을 위해 임의로 서버나 프레임워크를 추가하지 않는다.
 - API 서버는 선택 실행이다. 프로젝트 루트에서 `node server/server.js`로 `http://127.0.0.1:8787/api/v1`에 실행하고 `PORT` 환경 변수로 포트를 바꾼다. `catalog.js`나 `recommend.js`를 고치면 서버를 다시 시작한다. 테스트는 프로젝트 루트에서 `node --test "server/*.test.js"`로 실행한다.
-- 사용자가 직접 브라우저 테스트를 요청한 경우, 자동화 도구가 `file:`을 지원하지 않으면 테스트 동안만 `127.0.0.1`의 임시 미리보기를 사용할 수 있다. 화면 파일 5개(`index.html`, `styles.css`, `catalog.js`, `recommend.js`, `app.js`)만 제공하고 다른 파일·디렉터리는 노출하지 않는다. 테스트 후 종료하며 프로젝트의 실행 의존성이나 서비스 API로 도입하지 않는다. 이 임시 미리보기는 `server/server.js`와 별개다. HTTP 미리보기 검증과 Chrome의 `file:` 직접 실행 검증을 구분한다.
+- 사용자가 직접 브라우저 테스트를 요청한 경우, 자동화 도구가 `file:`을 지원하지 않으면 테스트 동안만 `127.0.0.1`의 임시 미리보기를 사용할 수 있다. 화면 파일 6개(`index.html`, `styles.css`, `catalog.js`, `recommend.js`, `app.js`, `favicon.png`)만 제공하고 다른 파일·디렉터리는 노출하지 않는다. 테스트 후 종료하며 프로젝트의 실행 의존성이나 서비스 API로 도입하지 않는다. 이 임시 미리보기는 `server/server.js`와 별개다. HTTP 미리보기 검증과 Chrome의 `file:` 직접 실행 검증을 구분한다.
 
 ## 확인 절차
 
