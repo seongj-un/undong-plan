@@ -1,5 +1,15 @@
 # 운동 부위와 기구 추천 프로젝트 작업 기록
 
+## 2026-10-01 GitHub Pages 배포
+
+- 사용자 요청: ‘깃페이지로 배포 하렴’.
+- 설정: `gh api`로 저장소 Pages를 켬. 방식은 브랜치 배포(`main`, 루트 `/`), HTTPS 강제. 별도 워크플로 파일·패키지·빌드 도구 추가 없음. 주소: https://seongj-un.github.io/undong-plan/
+- 빌드: GitHub의 `pages-build-deployment` 실행의 build·report-build-status·deploy 모두 success. 실행 로그의 Node.js 20·ubuntu-latest 안내는 GitHub 실행 환경 공지로 이 프로젝트와 무관.
+- 배포 확인(macOS Google Chrome headless, 배포 주소 직접 접속): 화면 파일 6개와 발표 자료 200 응답, https 로딩·운동 6개, 복부 빈 목록 안내, 별칭 검색, 기구 6개 확인 후 추천 3개, 추천 카드 상세, 새로고침 후 저장 복원, 발표 자료 이미지 3장 로딩 통과.
+- 콘솔: 브라우저가 자동으로 요청한 사이트 루트 `/favicon.ico` 404 한 건. 앱 파일 오류는 아니며 `file:` 실행에서는 생기지 않음. 앱 코드는 변경하지 않음.
+- 저장 주의: GitHub Pages의 모든 프로젝트 사이트는 같은 출처(`seongj-un.github.io`)를 쓴다. 이후 같은 계정에 다른 Pages 앱을 배포하면 `localStorage` 키 `study-planner-items`가 겹칠 수 있다. 현재 이 계정의 다른 Pages 사이트는 없음.
+- 문서: README 배포 주소·저장 안내, AGENTS.md·docs/project-overview.md·docs/api-spec.md의 배포 상태를 화면은 GitHub Pages, 서버는 미배포로 갱신.
+
 ## 2026-10-01 고등학생용 README 재작성
 
 - 사용자 요청: 정해진 10개 제목 순서로 고등학생이 읽기 쉬운 짧은 문장의 README.md 작성. 앱 코드는 변경하지 않음.
