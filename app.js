@@ -8,8 +8,107 @@
   const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const normalize = value => value.normalize('NFKC').trim().toLocaleLowerCase('en');
   let selectedBodyPart = 'all';
+  let selectedView = 'body';
+  let lastRecommendationRequest = null;
   let dialogTrigger = null;
   const dialog = byId('detail-dialog');
+  const STORAGE_KEY = 'study-planner-items';
+
+  function showStorageMessage(message = '') {
+    let notice = byId('storage-message');
+    if (!notice && !message) return;
+    if (!notice) {
+      notice = document.createElement('p');
+      notice.id = 'storage-message';
+      notice.className = 'muted';
+      notice.setAttribute('role', 'status');
+      document.querySelector('.view-switch').after(notice);
+    }
+    notice.textContent = message;
+    notice.hidden = !message;
+  }
+
+  function isSavedRequest(request) {
+    if (!request || typeof request !== 'object' || Array.isArray(request)) return false;
+    const validIds = (values, catalog) => Array.isArray(values)
+      && values.every(id => typeof id === 'string' && catalog.some(item => item.id === id))
+      && new Set(values).size === values.length;
+    return [undefined, 'confirmed', 'unknown'].includes(request.equipmentAvailability)
+      && validIds(request.availableEquipmentIds, CATALOG.equipment)
+      && validIds(request.preferredBodyPartIds, CATALOG.bodyParts)
+      && validIds(request.excludedBodyPartIds, CATALOG.bodyParts)
+      && Number.isInteger(request.maxItems) && request.maxItems >= 1 && request.maxItems <= 3
+      && (request.equipmentAvailability === 'confirmed' || request.availableEquipmentIds.length === 0);
+  }
+
+  // 저장: 사용자 조작 후 현재 탐색 상태와 추천 조건을 키 하나에 기록한다.
+  function saveAppState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: 1,
+        view: selectedView,
+        bodyPartId: selectedBodyPart,
+        equipmentQuery: byId('equipment-query').value,
+        searchError: !byId('search-error').hidden,
+        recommendationRequest: readRecommendRequest(),
+        lastRecommendationRequest
+      }));
+      showStorageMessage();
+    } catch {
+      showStorageMessage('선택 내용을 저장할 수 없어요. 현재 화면은 사용할 수 있지만 새로고침 후 복원되지 않을 수 있어요.');
+    }
+  }
+
+  // 불러오기: 저장값 없음·손상·접근 불가는 기본 탐색과 빈 추천 조건으로 시작한다.
+  function loadAppState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw === null) return null;
+      const state = JSON.parse(raw);
+      if (!state || state.version !== 1 || !['body', 'equipment', 'recommend'].includes(state.view)
+        || !(state.bodyPartId === 'all' || CATALOG.bodyParts.some(part => part.id === state.bodyPartId))
+        || typeof state.equipmentQuery !== 'string' || state.equipmentQuery.length > 50
+        || typeof state.searchError !== 'boolean' || (state.searchError && normalize(state.equipmentQuery))
+        || !isSavedRequest(state.recommendationRequest)
+        || !(state.lastRecommendationRequest === null || isSavedRequest(state.lastRecommendationRequest))) {
+        showStorageMessage('저장된 선택을 읽을 수 없어 기본 화면으로 시작했어요.');
+        return null;
+      }
+      return state;
+    } catch {
+      showStorageMessage('저장된 선택을 불러올 수 없어 기본 화면으로 시작했어요. 현재 화면은 계속 사용할 수 있어요.');
+      return null;
+    }
+  }
+
+  function restoreAppState() {
+    const state = loadAppState();
+    if (!state) return;
+    selectedBodyPart = state.bodyPartId;
+    byId('equipment-query').value = state.equipmentQuery;
+    byId('search-error').hidden = !state.searchError;
+    if (state.searchError) byId('equipment-query').setAttribute('aria-invalid', 'true');
+    const request = state.recommendationRequest;
+    const form = byId('recommend-form');
+    form.querySelectorAll('input[name="equipmentAvailability"]').forEach(input => {
+      input.checked = input.value === request.equipmentAvailability;
+    });
+    const selections = {
+      availableEquipment: request.availableEquipmentIds,
+      preferredBodyPart: request.preferredBodyPartIds,
+      excludedBodyPart: request.excludedBodyPartIds
+    };
+    Object.entries(selections).forEach(([name, ids]) => {
+      form.querySelectorAll(`input[name="${name}"]`).forEach(input => { input.checked = ids.includes(input.value); });
+    });
+    byId('max-items').value = String(request.maxItems);
+    syncEquipmentChoices();
+    renderExercises();
+    renderEquipment();
+    lastRecommendationRequest = state.lastRecommendationRequest;
+    if (lastRecommendationRequest) renderRecommendation(lastRecommendationRequest, RECOMMENDER.recommendToday(lastRecommendationRequest));
+    showView(state.view, false);
+  }
 
   function exerciseCard(exercise) {
     const names = exercise.equipmentIds.map(id => equipmentById(id).name);
@@ -81,10 +180,12 @@
       byId('search-error').hidden = false;
       input.setAttribute('aria-invalid', 'true');
       input.focus();
+      saveAppState();
       return;
     }
     clearSearchError();
     renderEquipment();
+    saveAppState();
   }
 
   function resetSearch() {
@@ -92,11 +193,14 @@
     clearSearchError();
     renderEquipment();
     byId('equipment-query').focus();
+    saveAppState();
   }
 
-  function showView(name) {
+  function showView(name, persist = true) {
+    selectedView = name;
     ['body', 'equipment', 'recommend'].forEach(view => { byId(`${view}-view`).hidden = view !== name; });
     document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', String(item.dataset.view === name)));
+    if (persist) saveAppState();
   }
 
   const STATUS_LABELS = { recommended: '추천 완료', partial: '일부만 추천', needs_equipment_confirmation: '기구 확인 필요', no_candidates: '추천 후보 없음' };
@@ -169,6 +273,7 @@
     if (!button) return;
     selectedBodyPart = button.dataset.bodyPart;
     renderExercises();
+    saveAppState();
   });
   document.querySelector('.view-switch').addEventListener('click', event => {
     const button = event.target.closest('[data-view]');
@@ -188,14 +293,20 @@
   byId('equipment-query').addEventListener('input', () => {
     if (normalize(byId('equipment-query').value)) clearSearchError();
     renderEquipment();
+    saveAppState();
   });
   byId('equipment-search').addEventListener('submit', submitEquipmentSearch);
   byId('clear-search').addEventListener('click', resetSearch);
-  byId('recommend-form').addEventListener('change', event => { if (event.target.name === 'equipmentAvailability') syncEquipmentChoices(); });
+  byId('recommend-form').addEventListener('change', event => {
+    if (event.target.name === 'equipmentAvailability') syncEquipmentChoices();
+    saveAppState();
+  });
   byId('recommend-form').addEventListener('submit', event => {
     event.preventDefault();
     const request = readRecommendRequest();
+    lastRecommendationRequest = request;
     renderRecommendation(request, RECOMMENDER.recommendToday(request));
+    saveAppState();
   });
   dialog.addEventListener('close', () => {
     if (dialogTrigger?.isConnected) dialogTrigger.focus({ preventScroll: true });
@@ -205,4 +316,5 @@
   renderExercises();
   renderEquipment();
   renderRecommendForm();
+  restoreAppState();
 })();
