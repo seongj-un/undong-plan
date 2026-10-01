@@ -24,6 +24,24 @@ const CATALOG = {
       aliases: ['레그 프레스', '레그프레스', 'leg press', 'seated leg press'],
       description: '앉은 자세에서 발로 발판을 밀어 하체와 엉덩이를 운동하는 머신입니다.',
       image: null
+    },
+    {
+      id: 'eq_leg_extension', name: '레그 익스텐션 머신',
+      aliases: ['레그 익스텐션', '레그익스텐션', 'leg extension', 'seated leg extension'],
+      description: '앉아서 무릎을 펴며 허벅지 앞쪽을 운동하는 머신입니다.',
+      image: null
+    },
+    {
+      id: 'eq_shoulder_press', name: '숄더 프레스 머신',
+      aliases: ['숄더 프레스', '숄더프레스', 'shoulder press', 'close-grip shoulder press'],
+      description: '등받이에 기대어 손잡이를 위로 미는 머신입니다. 여기서는 몸에 가까운 손잡이를 쓰는 좁은 그립 운동을 안내합니다.',
+      image: null
+    },
+    {
+      id: 'eq_seated_high_row', name: '시티드 하이 로우 머신',
+      aliases: ['시티드 로우', '시티드로우', '하이 로우', 'seated row', 'seated high back row'],
+      description: '가슴 패드에 몸을 지지하고 어깨 높이의 손잡이를 당기는 머신입니다. 여기서는 하이 로우 형태를 안내합니다.',
+      image: null
     }
   ],
   exercises: [
@@ -68,6 +86,51 @@ const CATALOG = {
       ],
       cautions: ['무릎을 과도하게 펴서 잠그지 않습니다.', '발뒤꿈치를 발판에서 떼거나 허리를 둥글게 말지 않습니다.'],
       sources: [{ title: 'ACE · Seated Leg Press', url: 'https://www.acefitness.org/resources/everyone/exercise-library/154/seated-leg-press/', checkedAt: '2026-09-30' }]
+    },
+    {
+      id: 'ex_leg_extension', name: '앉아서 레그 익스텐션', primaryBodyPartId: 'legs',
+      sourceBodyPartIds: ['legs'], secondaryBodyPartIds: null,
+      equipmentIds: ['eq_leg_extension'], difficulty: 'beginner', review: null,
+      summary: '무릎을 펴며 허벅지 앞쪽 운동을 알아보세요.',
+      instructions: [
+        '등을 등받이에 붙이고 무릎이 약 90도로 굽혀지도록 조절합니다. 패드는 발목 위쪽 앞에 놓고 발끝을 앞으로 향합니다.',
+        '좌석 양옆의 손잡이를 잡아 자세를 지지합니다.',
+        '허벅지 앞쪽에 힘을 주어 다리를 천천히 펴되 무릎을 과도하게 젖히지 않습니다.',
+        '잠시 멈춘 뒤 다리를 천천히 내려 시작 위치로 돌아옵니다.'
+      ],
+      cautions: ['반동을 써서 패드를 올리지 않습니다.', '다리를 부드럽게 펴고 내릴 수 있는 무게를 사용합니다.'],
+      sources: [
+        { title: 'ACE · Seated Leg Extension (대상 부위·난이도)', url: 'https://www.acefitness.org/resources/everyone/exercise-library/183/seated-leg-extension/', checkedAt: '2026-10-01' },
+        { title: 'PureGym · Leg Extensions (사용 순서·주의점)', url: 'https://www.puregym.com/exercises/legs/quad-exercises/leg-extensions/', checkedAt: '2026-10-01' }
+      ]
+    },
+    {
+      id: 'ex_shoulder_press', name: '앉아서 좁은 그립 숄더 프레스', primaryBodyPartId: 'shoulders',
+      sourceBodyPartIds: ['arms', 'shoulders'], secondaryBodyPartIds: null,
+      equipmentIds: ['eq_shoulder_press'], difficulty: 'beginner', review: null,
+      summary: '몸에 가까운 손잡이를 위로 밀며 어깨와 팔 운동을 알아보세요.',
+      instructions: [
+        '등을 등받이에 지지하고 손잡이가 어깨 높이 또는 약간 위에 오도록 좌석을 조절합니다. 발은 바닥이나 발 받침에 둡니다.',
+        '몸에 가까운 손잡이를 감싸 쥐고 손목을 팔뚝과 나란히 유지합니다. 팔꿈치를 몸 앞쪽으로 향하게 하고 몸통을 안정시킵니다.',
+        '숨을 내쉬며 손잡이를 천천히 위로 밉니다. 팔꿈치를 펴되 잠그지 않습니다.',
+        '잠시 멈춘 뒤 손잡이를 천천히 내려 팔꿈치가 앞쪽을 향하는 시작 자세로 돌아옵니다.'
+      ],
+      cautions: ['허리를 과도하게 젖히지 않습니다.', '손잡이를 아래로 떨어뜨리지 말고 움직임을 제어합니다.'],
+      sources: [{ title: 'ACE · Seated Machine Close-Grip Shoulder Press', url: 'https://www.acefitness.org/resources/everyone/exercise-library/187/seated-machine-close-grip-shoulder-press/', checkedAt: '2026-10-01' }]
+    },
+    {
+      id: 'ex_seated_high_row', name: '앉아서 하이 로우', primaryBodyPartId: 'back',
+      sourceBodyPartIds: ['arms', 'back'], secondaryBodyPartIds: null,
+      equipmentIds: ['eq_seated_high_row'], difficulty: 'beginner', review: null,
+      summary: '가슴 패드에 몸을 지지하고 손잡이를 당기는 등 운동을 알아보세요.',
+      instructions: [
+        '손잡이가 어깨 높이에 오도록 좌석을 조절하고 발을 바닥이나 발 받침에 둡니다. 가슴을 패드에 가볍게 붙입니다.',
+        '손잡이를 쥐고 손목을 팔뚝과 나란히 유지합니다. 어깨를 뒤로, 아래로 두고 몸통을 안정시킵니다.',
+        '숨을 내쉬며 팔꿈치를 옆으로 벌려 어깨 높이를 유지한 채 손잡이를 당깁니다. 가슴을 패드에서 떼지 않습니다.',
+        '팔꿈치가 어깨와 나란하거나 약간 뒤에 오면 멈춘 뒤 팔을 천천히 펴서 돌아옵니다.'
+      ],
+      cautions: ['당길 때 몸을 뒤로 젖히거나 허리를 과도하게 꺾지 않습니다.', '돌아올 때 등을 둥글게 말거나 어깨를 앞으로 말지 않습니다.'],
+      sources: [{ title: 'ACE · Seated High Back Rows', url: 'https://www.acefitness.org/resources/everyone/exercise-library/169/seated-high-back-rows/', checkedAt: '2026-10-01' }]
     }
   ]
 };

@@ -149,3 +149,18 @@
 - 사용자 요청에 따라 `loop-log.md`에 전달받은 1일차 반복 기록 양식을 그대로 추가.
 - 실제 점검·재검증 결과와 종료 이유는 아직 기록하지 않음. 양식의 추가·완료 표시·삭제 항목을 운동 추천 기능으로 임의 변경하지 않음.
 - 사용자 최신 지시: 코드 작성 허용, Claude 사용 금지. 해당 역할 지시는 기존 Claude 리뷰 기본 규칙보다 우선 적용.
+
+
+## 2026년 10월 1일 기구 목록 확장
+
+- 사용자 요청: ‘기구의 개수를 조금 더 늘려줘’.
+- 구현: 레그 익스텐션·숄더 프레스·시티드 하이 로우 머신과 연결 운동을 각각 3개 추가. 기구·운동은 각각 6개. 별칭 검색·기구 상세·운동 사용 안내·로컬 추천 입력에 기존 공유 카탈로그를 통해 반영.
+- 신규 운동은 원문 변형을 명시: 좁은 그립 숄더 프레스, 가슴 패드·어깨 높이 손잡이를 쓰는 하이 로우. 보조 부위·검수 정보·사진은 기존과 같이 null. API는 기구 6개만 공개하고 검수 전 운동 6개는 공개·추천하지 않는다.
+- 화면: index.html의 요약 개수를 app.js에서 실제 카탈로그 크기로 표시. recommend.js의 로컬 카탈로그 버전은 local-draft-2026-10-01로 갱신. 추천 규칙은 변경하지 않음.
+- 콘텐츠 근거: ACE의 [레그 익스텐션](https://www.acefitness.org/resources/everyone/exercise-library/183/seated-leg-extension/), [좁은 그립 숄더 프레스](https://www.acefitness.org/resources/everyone/exercise-library/187/seated-machine-close-grip-shoulder-press/), [하이 로우](https://www.acefitness.org/resources/everyone/exercise-library/169/seated-high-back-rows/)를 직접 확인했다. 레그 익스텐션 사용 순서는 [PureGym](https://www.puregym.com/exercises/legs/quad-exercises/leg-extensions/)에서 확인. 확인일 2026-10-01.
+- 서버 테스트: 실제 카탈로그의 기구 개수·검색 기대값·6개 상세·6개 초안의 비공개 상태를 확장. 기존 검수 완료 fixture의 기구 3개와 실제 카탈로그 6개 상수를 분리해 fixture 동작 보존. 최초 실행의 실패 4건은 이전 3개 데이터 기대값이 원인이며 6개 기준 반영 후 node --test "server/*.test.js" 47/47 통과. 서버 구현 수정 없음.
+- 브라우저: macOS Codex 내장 브라우저의 임시 HTTP 미리보기에서 확인 절차 1~9번과 반응형 등 43개(중복 제외) 통과, 콘솔 error/warn 0개. 애플리케이션 실패와 브라우저 수정 회차 0회. 상세 결과는 loop-log.md.
+- 문서: README.md, docs/project-overview.md, docs/planning.md, docs/api-spec.md에 현재 6개 범위·출처·버전을 동기화. 내부 파일 링크와 JSON 예시 파싱, git diff --check 통과.
+- 역할: Codex가 카탈로그 확장·화면 개수 표시·테스트 기대값 확장·문서 작성. claude 스킬의 도구 없는 리뷰를 호출했지만 리뷰 응답을 받지 못해 호출을 종료했다. 최종 is_error: true, error_during_execution이 반환되었으며 원인은 확인하지 못했다. 리뷰 완료로 기록하지 않음. 추가 호출은 자동 승인 검토에서 거부됐고 상세 이유는 반환되지 않았다. 성공하지 않은 리뷰 결과를 사용하지 않음.
+- 남은 확인: Chrome에서 index.html을 직접 열어 새로고침 후 신규 기구 검색·상세·추천 확인. 자동화 프로토콜 제한 때문에 file: 직접 실행은 미검증이며 HTTP 확인과 구분. 전문가 검수·개인별 적합성·사진 사용 권한은 미정 유지.
+- 정리: 검증용 브라우저 탭을 닫고 임시 미리보기와 지연된 Claude 호출을 종료했다. 공개 저장소 푸시는 이전 사용자 요청에 따라 이번 확장과 문서 변경 파일만 대상으로 진행한다.

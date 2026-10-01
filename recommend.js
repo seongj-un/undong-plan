@@ -4,7 +4,7 @@
 // 서버 API가 아니며 입력과 결과를 저장하지 않는다. 운동 처방 근거가 아니다.
 const RECOMMENDER = (() => {
   const RULES_VERSION = 'draft-v0.1';
-  const CATALOG_VERSION = 'local-draft-2026-09-30';
+  const CATALOG_VERSION = 'local-draft-2026-10-01';
   const BODY_PART_ORDER = ['chest', 'back', 'legs', 'glutes', 'shoulders', 'arms', 'core'];
   // 로컬 화면의 미리보기 예외: 검수 전 안내 초안도 후보로 쓴다. 서버는 false로 호출해 검수 완료 운동만 쓴다.
   const INCLUDE_UNREVIEWED_DRAFT = true;

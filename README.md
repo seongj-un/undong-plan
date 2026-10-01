@@ -28,8 +28,8 @@ macOS 실행: `open presentation.html` · Windows 명령 프롬프트 실행: `s
 | 오늘의 추천·추천 이유·예외 안내 | 기구 확인 여부, 사용할 수 있는 기구, 선호·제외 부위, 최대 추천 수(1~3개)를 입력하면 규칙에 따라 운동 카드와 추천 이유 표시. 입력 수정 필요·기구 확인 필요·추천 후보 없음·일부만 추천을 구분해 안내 |
 
 - 부위 분류: 가슴, 등, 하체, 엉덩이, 어깨, 팔, 복부.
-- 초기 기구와 운동: 체스트 프레스, 랫 풀다운, 레그 프레스 각 3개.
-- 어깨·팔·복부 운동은 아직 등록하지 않았습니다. 레그 프레스는 하체와 엉덩이에서 확인할 수 있습니다.
+- 현재 기구 6개와 연결 운동 6개: 체스트 프레스, 랫 풀다운, 레그 프레스, 레그 익스텐션, 숄더 프레스(좁은 그립), 시티드 하이 로우.
+- 복부 운동은 아직 등록하지 않았습니다. 레그 프레스는 하체·엉덩이, 숄더 프레스는 어깨·팔, 하이 로우는 등·팔에서 탐색할 수 있습니다.
 - 검색은 최대 50자이며 영문 대소문자를 구분하지 않습니다. 빈 입력은 전체 기구를 표시합니다.
 - 화면 전환과 상세 닫기 후에는 현재 입력을 유지합니다. 새로고침하면 전체 목록과 빈 추천 입력으로 시작하며 입력과 추천 결과를 저장하지 않습니다.
 - 오늘의 추천은 전문가 검수 전 안내 초안을 **미리보기 후보**로 사용하며 카드마다 ‘검수 전 초안’으로 표시합니다. 운동 처방이 아니며 무게·세트·횟수는 제공하지 않습니다. 이 방식은 기본안으로 적용했으며 사용자 확인을 기다리고 있습니다.
@@ -84,10 +84,10 @@ node server/server.js
 node --test "server/*.test.js"
 ```
 
-API 자동 테스트 47개가 실행됩니다. 프로젝트 루트에서 인자 없이 `node --test`를 실행해도 기본 패턴으로 `server/api.test.js`를 찾습니다. Node.js 24에서 `node --test server/`는 폴더를 테스트 파일로 찾지 못해 실패합니다. 인자는 glob 패턴으로 해석됩니다. [Node.js test runner](https://nodejs.org/api/test.html#running-tests-from-the-command-line)
+API 자동 테스트 47개가 실행됩니다. 기구 확장 후 2026-10-01 재실행에서도 47개 모두 통과했습니다. 프로젝트 루트에서 인자 없이 `node --test`를 실행해도 기본 패턴으로 `server/api.test.js`를 찾습니다. Node.js 24에서 `node --test server/`는 폴더를 테스트 파일로 찾지 못해 실패합니다. 인자는 glob 패턴으로 해석됩니다. [Node.js test runner](https://nodejs.org/api/test.html#running-tests-from-the-command-line)
 
 - 제공 경로: 부위 목록, 기구 목록·검색, 기구 상세, 운동 목록, 운동 상세, 오늘의 추천. 요청·응답은 [API 명세서](docs/api-spec.md)를 따릅니다.
-- 서버는 **검수 완료 운동만** 공개합니다. 현재 검수 완료 운동이 없어 운동 목록은 빈 배열, 운동 상세는 404, 기구를 확인한 추천은 `no_candidates`입니다. 부위 7개와 기구 3개는 조회됩니다.
+- 서버는 **검수 완료 운동만** 공개합니다. 현재 검수 완료 운동이 없어 운동 목록은 빈 배열, 운동 상세는 404, 기구를 확인한 추천은 `no_candidates`입니다. 부위 7개와 기구 6개는 조회됩니다.
 - CORS를 지원하지 않아 `index.html` 화면에서 호출할 수 없고, 화면도 서버를 호출하지 않습니다. 호출 제한과 배포는 없습니다. Windows에서는 실행하지 않았습니다.
 
 ## 사용 순서
@@ -152,9 +152,13 @@ undong-plan/
 
 임시 미리보기는 테스트 후 종료했습니다. 당시 프로젝트에는 자동 테스트 실행 명령이 없었습니다. Chrome의 `file:` 직접 실행은 자동화 도구의 프로토콜 제한으로 별도 검증하지 않았으며, 위 HTTP 테스트와 구분합니다.
 
+### 기구 확장 검증 (2026-10-01)
+
+macOS Codex 내장 브라우저의 임시 HTTP 미리보기에서 중복을 제외한 43개 확인을 통과했습니다. 기구 6개와 운동 6개의 표시, 7개 부위와 전체 탐색, 신규 기구의 한글·영문 검색과 상세, 추천·선호·제외·충돌·예외 상태, 새로고침, 콘솔 오류 없음, 320·390·768·1280px의 기구 목록과 추천 입력 가로 넘침을 확인했습니다. [실행 기록](loop-log.md)을 참고하세요. Chrome의 `file:` 직접 실행은 별도로 확인하지 않았습니다.
+
 ## 콘텐츠 상태와 출처
 
-운동 안내는 아래 ACE 자료를 확인한 한국어 요약 초안입니다. **전문가 검수와 개인별 적합성 확인은 미완료**입니다. 주 사용 부위는 화면 분류 초안이며, 보조 부위는 미정으로 표시합니다. 실제 기구 모델의 조절 방법은 현장의 기구 안내를 확인하세요.
+운동 안내는 아래 ACE·PureGym 자료를 확인한 한국어 요약 초안입니다. **전문가 검수와 개인별 적합성 확인은 미완료**입니다. 주 사용 부위는 화면 분류 초안이며, 보조 부위는 미정으로 표시합니다. 실제 기구 모델의 조절 방법은 현장의 기구 안내를 확인하세요.
 
 사진은 재사용 권한을 확인하지 못해 제공하지 않습니다. 확인되지 않은 검수자나 검수 날짜를 임의로 표시하지 않습니다. 화면의 오늘의 추천은 이 검수 전 초안을 미리보기로 사용하고, 서버 API는 검수 전 초안을 공개하거나 추천하지 않습니다.
 
@@ -163,6 +167,13 @@ undong-plan/
 - [ACE · Seated Chest Press](https://www.acefitness.org/resources/everyone/exercise-library/188/seated-chest-press/)
 - [ACE · Seated Lat Pulldown](https://www.acefitness.org/resources/everyone/exercise-library/158/seated-lat-pulldown/)
 - [ACE · Seated Leg Press](https://www.acefitness.org/resources/everyone/exercise-library/154/seated-leg-press/)
+
+추가 안내 출처 (확인일 2026-10-01):
+
+- [ACE · Seated Leg Extension](https://www.acefitness.org/resources/everyone/exercise-library/183/seated-leg-extension/): 대상 부위·기구·초보자 난이도 분류.
+- [PureGym · Leg Extensions](https://www.puregym.com/exercises/legs/quad-exercises/leg-extensions/): 레그 익스텐션 사용 순서와 주의점.
+- [ACE · Seated Machine Close-Grip Shoulder Press](https://www.acefitness.org/resources/everyone/exercise-library/187/seated-machine-close-grip-shoulder-press/): 좁은 그립 변형의 분류·사용 순서·주의점.
+- [ACE · Seated High Back Rows](https://www.acefitness.org/resources/everyone/exercise-library/169/seated-high-back-rows/): 가슴 패드를 사용하는 하이 로우 변형의 분류·사용 순서·주의점.
 
 ## 후속 범위
 

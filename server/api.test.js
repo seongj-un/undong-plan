@@ -17,6 +17,7 @@ const SUMMARY_KEYS = ['difficulty', 'equipmentIds', 'id', 'name', 'primaryBodyPa
 const DETAIL_KEYS = [...SUMMARY_KEYS, 'cautions', 'instructions', 'review', 'sources'].sort();
 const RECOMMENDATION_KEYS = ['catalogVersion', 'items', 'message', 'requestedCount', 'returnedCount', 'rulesVersion', 'status'];
 const ALL_EQUIPMENT = ['eq_chest_press', 'eq_lat_pulldown', 'eq_leg_press'];
+const CATALOG_EQUIPMENT = ['eq_chest_press', 'eq_lat_pulldown', 'eq_leg_extension', 'eq_leg_press', 'eq_seated_high_row', 'eq_shoulder_press'];
 const silentLogger = { info() {}, error() {} };
 
 async function start(options = {}) {
@@ -103,7 +104,7 @@ describe('실제 catalog.js: 부위·기구 조회', () => {
   it('GET /api/v1/equipment는 q 생략 시 전체 기구를 Equipment 형식으로 반환한다', async () => {
     const res = await api.request('/api/v1/equipment');
     assert.equal(res.status, 200);
-    assert.deepEqual(ids(res), ALL_EQUIPMENT);
+    assert.deepEqual(ids(res), CATALOG_EQUIPMENT);
     res.json.data.forEach(item => {
       assert.deepEqual(Object.keys(item), ['id', 'name', 'aliases', 'description', 'image']);
       assert.equal(item.image, null);
@@ -116,9 +117,15 @@ describe('실제 catalog.js: 부위·기구 조회', () => {
       ['CHEST PRESS', ['eq_chest_press']],
       ['Lat Pull-Down', ['eq_lat_pulldown']],
       ['풀다운', ['eq_lat_pulldown']],
-      ['  프레스  ', ['eq_chest_press', 'eq_leg_press']],
-      ['ＬＥＧ', ['eq_leg_press']],
-      ['press', ['eq_chest_press', 'eq_leg_press']]
+      ['  프레스  ', ['eq_chest_press', 'eq_leg_press', 'eq_shoulder_press']],
+      ['ＬＥＧ', ['eq_leg_extension', 'eq_leg_press']],
+      ['press', ['eq_chest_press', 'eq_leg_press', 'eq_shoulder_press']],
+      ['레그익스텐션', ['eq_leg_extension']],
+      ['LEG EXTENSION', ['eq_leg_extension']],
+      ['숄더프레스', ['eq_shoulder_press']],
+      ['Shoulder Press', ['eq_shoulder_press']],
+      ['시티드로우', ['eq_seated_high_row']],
+      ['SEATED ROW', ['eq_seated_high_row']]
     ];
     for (const [q, expected] of cases) {
       const res = await api.request(`/api/v1/equipment?q=${encodeURIComponent(q)}`);
@@ -134,7 +141,7 @@ describe('실제 catalog.js: 부위·기구 조회', () => {
   });
 
   it('q를 생략하면 전체, 빈 q나 공백 q를 보내면 400', async () => {
-    assert.equal((await api.request('/api/v1/equipment')).json.data.length, 3);
+    assert.equal((await api.request('/api/v1/equipment')).json.data.length, 6);
     for (const path of ['/api/v1/equipment?q=', '/api/v1/equipment?q', '/api/v1/equipment?q=%20%20%20']) {
       const res = await api.request(path);
       assertError(res, 400, 'VALIDATION_ERROR');
@@ -167,10 +174,12 @@ describe('실제 catalog.js: 부위·기구 조회', () => {
   });
 
   it('GET /api/v1/equipment/{id}는 Equipment 한 개, 없으면 404 EQUIPMENT_NOT_FOUND', async () => {
-    const found = await api.request('/api/v1/equipment/eq_leg_press');
-    assert.equal(found.status, 200);
-    assert.equal(found.json.data.id, 'eq_leg_press');
-    assert.deepEqual(Object.keys(found.json.data), ['id', 'name', 'aliases', 'description', 'image']);
+    for (const id of CATALOG_EQUIPMENT) {
+      const found = await api.request(`/api/v1/equipment/${id}`);
+      assert.equal(found.status, 200);
+      assert.equal(found.json.data.id, id);
+      assert.deepEqual(Object.keys(found.json.data), ['id', 'name', 'aliases', 'description', 'image']);
+    }
     assertError(await api.request('/api/v1/equipment/eq_smith_machine'), 404, 'EQUIPMENT_NOT_FOUND', []);
     assertError(await api.request('/api/v1/equipment/%E0%A4%A'), 404, 'EQUIPMENT_NOT_FOUND', []);
     const withQuery = await api.request('/api/v1/equipment/eq_leg_press?q=a');
@@ -186,7 +195,7 @@ describe('실제 catalog.js: 운동 조회는 검수 완료 운동만 공개한�
 
   it('로컬 초안(review: null, 보조 부위 null)은 공개 카탈로그에서 빠진다', () => {
     const { catalog } = loadRuntime();
-    assert.equal(catalog.exercises.length, 3);
+    assert.equal(catalog.exercises.length, 6);
     assert.deepEqual(buildPublicCatalog(catalog).exercises, []);
   });
 
@@ -218,7 +227,7 @@ describe('실제 catalog.js: 운동 조회는 검수 완료 운동만 공개한�
   });
 
   it('로컬 초안 운동 상세는 404 EXERCISE_NOT_FOUND', async () => {
-    for (const id of ['ex_chest_press', 'ex_lat_pulldown', 'ex_leg_press', 'ex_missing']) {
+    for (const id of ['ex_chest_press', 'ex_lat_pulldown', 'ex_leg_press', 'ex_leg_extension', 'ex_shoulder_press', 'ex_seated_high_row', 'ex_missing']) {
       assertError(await api.request(`/api/v1/exercises/${id}`), 404, 'EXERCISE_NOT_FOUND', []);
     }
   });
@@ -302,9 +311,9 @@ describe('실제 catalog.js: 오늘의 추천', () => {
   });
 
   it('모든 기구를 선택해도 검수 완료 운동이 없어 no_candidates이며 초안을 후보로 쓰지 않는다', async () => {
-    const first = await api.post({ equipmentAvailability: 'confirmed', availableEquipmentIds: ALL_EQUIPMENT });
+    const first = await api.post({ equipmentAvailability: 'confirmed', availableEquipmentIds: CATALOG_EQUIPMENT });
     assertRecommendation(first, 'no_candidates', [], 3);
-    const second = await api.post({ equipmentAvailability: 'confirmed', availableEquipmentIds: ALL_EQUIPMENT });
+    const second = await api.post({ equipmentAvailability: 'confirmed', availableEquipmentIds: CATALOG_EQUIPMENT });
     assert.equal(second.json.data.catalogVersion, first.json.data.catalogVersion);
   });
 

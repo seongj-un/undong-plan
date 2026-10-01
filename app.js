@@ -179,6 +179,7 @@
     if (dialogTrigger?.isConnected) dialogTrigger.focus({ preventScroll: true });
     dialogTrigger = null;
   });
+  byId('catalog-count').textContent = `운동 ${CATALOG.exercises.length}개 · 기구 ${CATALOG.equipment.length}개`;
   renderExercises();
   renderEquipment();
   renderRecommendForm();

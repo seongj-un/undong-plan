@@ -10,7 +10,7 @@ F01~F06의 [정적 화면](../index.html)은 내장된 `catalog.js` 데이터와
 
 현재 서버는 CORS 헤더를 보내지 않는다. 다른 출처에서 연 화면(`file:`로 연 `index.html` 포함)은 브라우저 정책상 응답을 읽을 수 없다. [MDN CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS) 화면과 API의 연결 방식(CORS 허용 또는 같은 출처 제공)은 미정이다.
 
-로컬 화면의 추천은 검수 전 초안을 미리보기 후보로 쓰고 `catalogVersion`을 `local-draft-2026-09-30`으로 표시한다. 서버는 검수 완료 운동만 후보로 쓴다. 이 로컬 미리보기 예외는 사용자 확인 대기이며 공개 API 계약의 변경이 아니다.
+로컬 화면의 추천은 검수 전 초안을 미리보기 후보로 쓰고 `catalogVersion`을 `local-draft-2026-10-01`으로 표시한다. 서버는 검수 완료 운동만 후보로 쓴다. 이 로컬 미리보기 예외는 사용자 확인 대기이며 공개 API 계약의 변경이 아니다.
 
 로컬 안내 초안은 아래 공개 API 모델과 구분한다. `review: null`, `secondaryBodyPartIds: null`은 미검수·미정 상태를 표시하기 위한 로컬 전용 표현이다. `sourceBodyPartIds: string[]`도 원문 대상 부위로 탐색하기 위한 로컬 전용 필드다. 주 사용 부위는 화면 분류 초안이다. 이러한 데이터를 검수 완료 API 응답으로 반환하지 않는다.
 
@@ -279,11 +279,11 @@ GET에는 요청 본문이 없다. 정의하지 않은 쿼리 매개변수나 �
 ### 공개 카탈로그 변환
 
 - 공개 운동 조건: `review.reviewedAt`이 `YYYY-MM-DD`, `review.reviewerLabel`이 비어 있지 않음, `difficulty: "beginner"`, `secondaryBodyPartIds`가 배열, `instructions` 1개 이상, `cautions` 배열, `sources` 1개 이상(각 `title`·`url`·`checkedAt`).
-- 현재 `catalog.js`에는 조건을 만족하는 운동이 없다. 그래서 `GET /api/v1/exercises`는 `data: []`, 운동 상세는 404 `EXERCISE_NOT_FOUND`, `confirmed` 추천은 `no_candidates`다. 부위 7개와 기구 3개는 조회된다.
+- 현재 `catalog.js`에는 조건을 만족하는 운동이 없다. 그래서 `GET /api/v1/exercises`는 `data: []`, 운동 상세는 404 `EXERCISE_NOT_FOUND`, `confirmed` 추천은 `no_candidates`다. 부위 7개와 기구 6개는 조회된다.
 - 로컬 전용 필드(`sourceBodyPartIds`, `summary`)는 응답에서 제거한다.
 - `catalog.js`에 부위 설명이 없어 BodyPart의 `description`은 `"<부위 이름> 부위 운동을 찾아보세요."`로 만든다.
 - 목록은 공통 목록 규칙대로 식별자 오름차순이다. 부위 목록은 `arms`, `back`, `chest`… 순서라 화면의 표시 순서(가슴·등·하체…)와 다르다.
-- 추천의 `catalogVersion`은 `server-` 뒤에 공개 카탈로그 JSON의 SHA-256 앞 12자리를 붙인다. 현재 값은 `server-b74a3d9f9fbc`다.
+- 추천의 `catalogVersion`은 `server-` 뒤에 공개 카탈로그 JSON의 SHA-256 앞 12자리를 붙인다. 기구·운동 등 공개 데이터가 달라지면 값도 바뀐다.
 - 추천은 `recommend.js`를 `includeUnreviewedDraft: false`로 호출한다. 추천 입력 검증 순서는 `VALIDATION_ERROR` → `UNKNOWN_CATALOG_ID` → `CONFLICTING_BODY_PARTS`다.
 
 ### 명세 오류 표에 없는 상태·오류

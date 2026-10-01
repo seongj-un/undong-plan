@@ -10,10 +10,10 @@
 
 | 기능 | 현재 화면 동작 | 현재 데이터 제약 |
 | --- | --- | --- |
-| F01 | 전체·7개 부위 선택, 연결 운동과 기구 표시, 미등록 부위 안내 | 운동 3개, 출처 대상 부위로 탐색 |
-| F02 | 이름·한글/영문 별칭 부분 검색, 상세, 초기화, 빈 결과 | 기구 3개, 사진 미제공 |
+| F01 | 전체·7개 부위 선택, 연결 운동과 기구 표시, 미등록 부위 안내 | 운동 6개, 출처 대상 부위로 탐색 |
+| F02 | 이름·한글/영문 별칭 부분 검색, 상세, 초기화, 빈 결과 | 기구 6개, 사진 미제공 |
 | F03 | 상세에서 부위·기구·사용 순서·주의점·출처·확인일 표시 | 한국어 요약 초안, 전문가 검수 미완료 |
-| F04 | 기구 확인 여부(필수)·사용할 수 있는 기구·선호/제외 부위·최대 추천 수 입력, 아래 추천 규칙으로 운동 카드 표시 | 검수 전 초안 3개를 미리보기 후보로 사용(아래 예외) |
+| F04 | 기구 확인 여부(필수)·사용할 수 있는 기구·선호/제외 부위·최대 추천 수 입력, 아래 추천 규칙으로 운동 카드 표시 | 검수 전 초안 6개를 미리보기 후보로 사용(아래 예외) |
 | F05 | 카드마다 주 사용 부위, 보조 부위, 사용 기구, 추천 이유, 사용법 보기 | 보조 부위 미정이면 확인한 범위만 이유에 표시 |
 | F06 | 입력 수정 필요, 기구 확인 필요(기구로 찾기 연결), 기구 없음, 조건에 맞는 후보 없음, 일부만 추천을 구분 | 조건을 자동으로 완화하지 않음 |
 
@@ -103,6 +103,9 @@
 | 앉아서 체스트 프레스 | 체스트 프레스 머신 | ACE는 가슴과 웨이트 머신으로 분류 |
 | 앉아서 랫 풀다운 | 랫 풀다운 머신 | ACE는 등과 웨이트 머신으로 분류 |
 | 앉아서 레그 프레스 | 레그 프레스 머신 | ACE는 엉덩이·허벅지와 웨이트 머신으로 분류 |
+| 앉아서 레그 익스텐션 | 레그 익스텐션 머신 | ACE는 허벅지와 웨이트 머신으로 분류 |
+| 앉아서 좁은 그립 숄더 프레스 | 숄더 프레스 머신 | ACE는 팔·어깨와 웨이트 머신으로 분류 |
+| 앉아서 하이 로우 | 시티드 하이 로우 머신 | ACE는 팔·등과 웨이트 머신으로 분류 |
 
 근거: [ACE 초보자 운동 목록](https://www.acefitness.org/resources/everyone/exercise-library/experience/beginner/?page=5). 이 분류는 모든 사용자에게 해당 운동이 적합하다는 보증이 아니다.
 
@@ -137,6 +140,13 @@ NHS는 운동을 천천히 시작하고 반복 수를 점진적으로 늘리도�
 - [ACE · Seated Chest Press](https://www.acefitness.org/resources/everyone/exercise-library/188/seated-chest-press/): 가슴·웨이트 머신 분류, 좌석 높이와 손목·어깨 유지, 미는 동작과 복귀 안내.
 - [ACE · Seated Lat Pulldown](https://www.acefitness.org/resources/everyone/exercise-library/158/seated-lat-pulldown/): 등·웨이트 머신 분류, 허벅지 패드·몸통 유지와 바를 당기고 복귀하는 안내.
 - [ACE · Seated Leg Press](https://www.acefitness.org/resources/everyone/exercise-library/154/seated-leg-press/): 엉덩이·허벅지·웨이트 머신 분류, 등·발뒤꿈치 지지, 발판을 밀고 복귀하는 안내.
+
+추가 안내 출처 (확인일 2026-10-01):
+
+- [ACE · Seated Leg Extension](https://www.acefitness.org/resources/everyone/exercise-library/183/seated-leg-extension/): 대상 부위·기구·초보자 난이도 분류.
+- [PureGym · Leg Extensions](https://www.puregym.com/exercises/legs/quad-exercises/leg-extensions/): 레그 익스텐션 사용 순서와 주의점.
+- [ACE · Seated Machine Close-Grip Shoulder Press](https://www.acefitness.org/resources/everyone/exercise-library/187/seated-machine-close-grip-shoulder-press/): 좁은 그립 변형의 분류·사용 순서·주의점.
+- [ACE · Seated High Back Rows](https://www.acefitness.org/resources/everyone/exercise-library/169/seated-high-back-rows/): 가슴 패드를 사용하는 하이 로우 변형의 분류·사용 순서·주의점.
 
 ## 추후 검증 제안
 
